@@ -10,14 +10,14 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
+          name: Bump version
+          command: ./bump.sh
+      - run:
           name: Build Docker container
           command: docker build -t jhrv/testapp:latest .
       - run:
           name: Login to Dockerhub
           command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-      - run:
-          name: Bump version
-          command: ./bump.sh
       - run:
           name: Release new version
           command: |
