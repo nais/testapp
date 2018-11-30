@@ -9,25 +9,9 @@ jobs:
             - "7b:7d:43:df:65:13:7f:55:79:4d:75:9a:4d:bc:cd:87"
       - setup_remote_docker
       - checkout
-      #- run:
-      #    name: Bump version temporarily for build
-      #    command: ./bump.sh
       - run:
           name: Build Docker container
           command: docker build -t jhrv/testapp:latest .
-#      - run:
-#          name: Save Docker container
-#          command: docker save jhrv/testapp:latest -o /tmp/workspace/docker-image.tar
-#      - persist_to_workspace:
-#          root: /tmp/workspace
-#          paths:
-#            - docker-image.tar
-#      - checko#ut
-#      - attach#_workspace:
-#          at: /tmp/workspace
-#      - run:
-#          name: Load Docker container
-#          command: docker load -i /tmp/workspace/docker-image.tar
       - run:
           name: Login to Dockerhub
           command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"

@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ app }}
+  name: {{ app }}
+  namespace: {{ ns }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ app }}
+  template:
+    metadata:
+      labels:
+        app: {{ app }}
+    spec:
+      containers:
+      - image: jhrv/testapp
+        imagePullPolicy: Always
+        name: {{ app }}
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ app }}
+  name: {{ app }}
+  namespace: {{ ns }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: {{ app }}
+  type: ClusterIP
