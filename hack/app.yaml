@@ -1,3 +1,5 @@
+# app=testapp ns=default; kubectl apply -f - <<< $(cat app.yaml | sed "s/{{ app }}/${app}/g" | sed "s/{{ ns }}/${ns}/g")
+
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -16,7 +18,7 @@ spec:
         app: {{ app }}
     spec:
       containers:
-      - image: jhrv/testapp
+      - image: jhrv/testapp:latest
         imagePullPolicy: Always
         name: {{ app }}
         ports:

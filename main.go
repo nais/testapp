@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var bindAddr string
@@ -39,6 +40,7 @@ func main() {
 
 	<-interrupt
 
-	log.Print("shutting down")
+	time.Sleep(5 * time.Second)
+	log.Print("allowing some time for graceful shutdown")
 	server.Shutdown(context.Background())
 }
