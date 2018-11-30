@@ -8,7 +8,7 @@ WORKDIR /src
 RUN rm -f go.sum
 RUN go get
 RUN go test ./...
-RUN go build -a -installsuffix cgo -o testapp
+RUN make release
 
 FROM alpine:3.8
 MAINTAINER Johnny Horvi <johnny.horvi@gmail.com>
