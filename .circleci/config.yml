@@ -1,0 +1,55 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.11
+    steps:
+      - setup_remote_docker
+      - checkout
+      #- run:
+      #    name: Bump version temporarily for build
+      #    command: ./bump.sh
+      - run:
+          name: Build Docker container
+          command: docker build -t jhrv/testapp:latest .
+#      - run:
+#          name: Save Docker container
+#          command: docker save jhrv/testapp:latest -o /tmp/workspace/docker-image.tar
+#      - persist_to_workspace:
+#          root: /tmp/workspace
+#          paths:
+#            - docker-image.tar
+#  release:
+#    <<: *defaults
+#    steps:
+#      - setup_remote_docker
+#      - add_ssh_keys:
+#          fingerprints:
+#            - "a0:e7:55:ea:ab:91:11:bb:5a:b2:41:ed:79:83:c7:80"
+#      - checkout
+#      - attach_workspace:
+#          at: /tmp/workspace
+#      - run:
+#          name: Load Docker container
+#          command: docker load -i /tmp/workspace/docker-image.tar
+      - run:
+          name: Login to Dockerhub
+          command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
+#      - run:
+#          name: Bump version
+#          command: ./bump.sh
+#      - run:
+#          name: Release new version
+#          command: |
+#            version=$(cat version)
+#            git commit version -m "Release version ${version} [skip ci]"
+#            git tag ${version}
+#            git push
+#            git push --tags
+      - run:
+          name: Push Docker container
+          command: |
+            docker tag jhrv/testapp:latest jhrv/testapp:$(cat version)
+            docker push jhrv/testapp:latest
+#            docker push jhrv/testapp:$(cat version)
+#
