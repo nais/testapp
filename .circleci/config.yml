@@ -23,11 +23,11 @@ jobs:
 #    <<: *defaults
 #    steps:
 #      - setup_remote_docker
-#      - add_ssh_keys:
-#          fingerprints:
-#            - "a0:e7:55:ea:ab:91:11:bb:5a:b2:41:ed:79:83:c7:80"
-#      - checkout
-#      - attach_workspace:
+      - add_ssh_keys:
+          fingerprints:
+            - "7b:7d:43:df:65:13:7f:55:79:4d:75:9a:4d:bc:cd:87"
+#      - checko#ut
+#      - attach#_workspace:
 #          at: /tmp/workspace
 #      - run:
 #          name: Load Docker container
@@ -35,21 +35,21 @@ jobs:
       - run:
           name: Login to Dockerhub
           command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-#      - run:
-#          name: Bump version
-#          command: ./bump.sh
-#      - run:
-#          name: Release new version
-#          command: |
-#            version=$(cat version)
-#            git commit version -m "Release version ${version} [skip ci]"
-#            git tag ${version}
-#            git push
-#            git push --tags
+      - run:
+          name: Bump version
+          command: ./bump.sh
+      - run:
+          name: Release new version
+          command: |
+            version=$(cat version)
+            git commit version -m "Release version ${version} [skip ci]"
+            git tag ${version}
+            git push
+            git push --tags
       - run:
           name: Push Docker container
           command: |
             docker tag jhrv/testapp:latest jhrv/testapp:$(cat version)
             docker push jhrv/testapp:latest
-#            docker push jhrv/testapp:$(cat version)
+            docker push jhrv/testapp:$(cat version)
 #
