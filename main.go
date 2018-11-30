@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/jhrv/testapp/pkg/version"
 	"log"
 	"net/http"
 	"os"
@@ -29,6 +30,11 @@ func main() {
 	r.HandleFunc("/isalive", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "yes")
+	})
+
+	r.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "%s (rev: %s)", version.Version, version.Revision)
 	})
 
 	log.Println("running @", bindAddr)
