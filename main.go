@@ -27,7 +27,7 @@ func init() {
 
 func main() {
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 	hostname, _ := os.Hostname()
 
 	r := mux.NewRouter()
