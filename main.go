@@ -46,7 +46,8 @@ func main() {
 
 	<-interrupt
 
-	time.Sleep(5 * time.Second)
 	log.Print("allowing some time for graceful shutdown")
+	time.Sleep(20 * time.Second)
+	log.Print("shutting down")
 	server.Shutdown(context.Background())
 }
