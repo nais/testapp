@@ -19,10 +19,6 @@ jobs:
 #          root: /tmp/workspace
 #          paths:
 #            - docker-image.tar
-#  release:
-#    <<: *defaults
-#    steps:
-#      - setup_remote_docker
       - add_ssh_keys:
           fingerprints:
             - "7b:7d:43:df:65:13:7f:55:79:4d:75:9a:4d:bc:cd:87"
