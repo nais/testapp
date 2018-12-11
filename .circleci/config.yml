@@ -18,14 +18,10 @@ jobs:
       - run:
           name: Release new version
           command: |
-            last_version=$(($(git describe --abbrev=0 --tags)+1))
-            git tag -a "${last_version}" -m "${last_version}"
+            version=$(($(git describe --abbrev=0 --tags)+1))
+            git tag -a "${version}" -m "${version}"
             git push --tags
-      - run:
-          name: Push Docker container
-          command: |
-            new_version=$(git describe --abbrev=0 --tags)
-            docker tag jhrv/testapp:latest jhrv/testapp:${new_version}
+            docker tag jhrv/testapp:latest jhrv/testapp:${version}
             docker push jhrv/testapp:latest
-            docker push jhrv/testapp:${new_version}
+            docker push jhrv/testapp:${version}
 #
