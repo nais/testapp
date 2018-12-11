@@ -12,7 +12,7 @@ RUN make release
 
 FROM alpine:3.8
 MAINTAINER Johnny Horvi <johnny.horvi@gmail.com>
-RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd
+RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd bash
 WORKDIR /app
 COPY --from=builder /src/testapp /app/testapp
 CMD ["/app/testapp"]

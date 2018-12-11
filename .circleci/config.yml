@@ -10,9 +10,6 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
-          name: Bump version
-          command: ./bump.sh
-      - run:
           name: Build Docker container
           command: docker build -t jhrv/testapp:latest .
       - run:
@@ -21,15 +18,14 @@ jobs:
       - run:
           name: Release new version
           command: |
-            version=$(cat version)
-            git commit version -m "Release version ${version} [skip ci]"
-            git tag ${version}
-            git push
+            last_version=$(($(git describe --abbrev=0 --tags)+1))
+            git tag -a "${last_version}" -m "${last_version}"
             git push --tags
       - run:
           name: Push Docker container
           command: |
-            docker tag jhrv/testapp:latest jhrv/testapp:$(cat version)
+            new_version=$(git describe --abbrev=0 --tags)
+            docker tag jhrv/testapp:latest jhrv/testapp:${new_version}
             docker push jhrv/testapp:latest
-            docker push jhrv/testapp:$(cat version)
+            docker push jhrv/testapp:${new_version}
 #
