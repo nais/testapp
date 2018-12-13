@@ -6,7 +6,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "7b:7d:43:df:65:13:7f:55:79:4d:75:9a:4d:bc:cd:87"
+            - "1e:5c:d9:fc:7e:1f:e4:60:34:44:5c:97:10:60:31:2a"
       - setup_remote_docker
       - checkout
       - run:
@@ -18,9 +18,7 @@ jobs:
       - run:
           name: Release new version
           command: |
-            version=$(($(git describe --abbrev=0 --tags)+1))
-            git tag -a "${version}" -m "${version}"
-            git push --tags
+            version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
             docker tag jhrv/testapp:latest jhrv/testapp:${version}
             docker push jhrv/testapp:latest
             docker push jhrv/testapp:${version}

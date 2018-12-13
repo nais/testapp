@@ -32,9 +32,9 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/isalive", func(w http.ResponseWriter, _ *http.Request) {
+	r.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "yes")
+		fmt.Fprint(w, "pong\n")
 	})
 
 	r.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {

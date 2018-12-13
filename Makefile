@@ -1,5 +1,6 @@
-PREV_VERSION=$(shell git describe --abbrev=0 --tags)
-VERSION=$(shell echo $$(($(PREV_VERSION)+1)))
+DATE=$(shell date "+%Y-%m-%d")
+LAST_COMMIT=$(shell git --no-pager log -1 --pretty=%h)
+VERSION="$(DATE)-$(LAST_COMMIT)"
 LDFLAGS := -X github.com/jhrv/testapp/pkg/version.Revision=$(shell git rev-parse --short HEAD) -X github.com/jhrv/testapp/pkg/version.Version=$(VERSION)
 
 release:
