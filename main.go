@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/jhrv/testapp/pkg/version"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	flag "github.com/spf13/pflag"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,12 +26,14 @@ var (
 
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
+
 	flag.StringVar(&bindAddr, "bind-address", ":8080", "ip:port where http requests are served")
 	flag.StringVar(&pingResponse, "ping-response", "pong\n", "what to respond when pinged")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
-	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 5, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
+	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Parse()
 }
+
 
 func main() {
 	interrupt := make(chan os.Signal, 1)
@@ -38,6 +41,8 @@ func main() {
 	hostname, _ := os.Hostname()
 
 	r := mux.NewRouter()
+
+	r.Handle("/metrics", promhttp.Handler())
 
 	r.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
