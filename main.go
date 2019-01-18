@@ -64,6 +64,17 @@ func main() {
 		fmt.Fprint(w, os.Environ())
 	})
 
+	r.HandleFunc("/log", func(w http.ResponseWriter, _ *http.Request) {
+		log.Info("this is a log statement from testapp")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.HandleFunc("/logerror", func(w http.ResponseWriter, _ *http.Request) {
+		log.Error("this is a error log statement from testapp")
+		w.WriteHeader(http.StatusOK)
+	})
+
+
 	r.HandleFunc("/connect", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}

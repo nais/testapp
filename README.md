@@ -10,6 +10,8 @@ simple go binary that exposes the following services
 * `/metrics` (prints Prometheus metrics)) 
 * `/version` (prints running version of testapp binary) 
 * `/connect` (performs a HTTP GET to the URL configured in `$CONNECT_URL` and prints the result. Ignores certs)
+* `/log` (logs "this is a log statement" with level `info`)
+* `/logerror` (logs "this is a error log statement" with level `error`)
 
 ## binaries
 the docker container has the following binaries

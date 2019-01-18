@@ -6,12 +6,12 @@ metadata:
   labels:
     team: aura
 spec:
-  image: jhrv/testapp:latest
+  image: jhrv/testapp:2018-12-14-4ec6462
   port: 8080
   liveness:
-    path: /isalive
+    path: /ping
   readiness:
-    path: /isalive
+    path: /ping
   replicas:
     min: 2
     max: 4
