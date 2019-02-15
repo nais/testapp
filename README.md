@@ -16,7 +16,7 @@ simple go binary that exposes the following services
 ## binaries
 the docker container has the following binaries
 
-`nc`, `curl`, `dig`, `nmap`, `socat`, `[hey](https://github.com/rakyll/hey)`, `vim`, `tcpdump`, `traceroute`, `strace`, `iperf`, `telnet`
+`nc`, `curl`, `dig`, `nmap`, `socat`, [hey](https://github.com/rakyll/hey), `vim`, `tcpdump`, `traceroute`, `strace`, `iperf`, `telnet`
 
 ## options
 ```
