@@ -1,0 +1,34 @@
+# $ deployment-cli deploy payload --team=aura -r ./nais.yaml --version=69 --config=dev-config.json
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: testapp
+  namespace: default
+  labels:
+    team: {{team}}
+spec:
+  image: jhrv/testapp:{{version}}
+  port: 8080
+  liveness:
+    path: /ping
+  readiness:
+    path: /ping
+  replicas:
+    min: 2
+    max: 4
+  ingresses: 
+    - "https://testapp.{{cluster}}.nais.io"
+  env:
+    - name: MY_CUSTOM_VAR
+      value: some_value
+{{~#each envs}}
+    - name: {{name}}
+      value: {{value}}
+{{~/each}}
+  resources:
+    limits:
+      cpu: {{resources.limits.cpu}}
+      memory: {{resources.limits.memory}}
+    requests:
+      cpu: {{resources.requests.cpu}}
+      memory: {{resources.requests.memory}}

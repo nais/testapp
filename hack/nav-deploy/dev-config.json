@@ -1,0 +1,10 @@
+{
+  "resources": {
+    "limits": { "cpu": "250m", "memory": "256Mi" },
+    "requests": { "cpu": "100m", "memory": "128Mi" }
+  },
+  "envs": [
+    { "name": "foo", "value": "bar" },
+    { "name": "asdf", "value": "123" }
+  ]
+}

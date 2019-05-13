@@ -6,7 +6,7 @@ metadata:
   labels:
     team: aura
 spec:
-  image: jhrv/testapp:2018-12-14-4ec6462
+  image: jhrv/testapp:latest
   port: 8080
   liveness:
     path: /ping
