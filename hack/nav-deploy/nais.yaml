@@ -1,4 +1,4 @@
-# $ deployment-cli deploy payload --team=aura -r ./nais.yaml --version=69 --config=dev-config.json
+# $ deployment-cli deploy payload --team=aura --resource=./nais.yaml --version=69 --config=dev-config.json
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
