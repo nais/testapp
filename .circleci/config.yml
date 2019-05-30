@@ -4,9 +4,6 @@ jobs:
     docker:
       - image: circleci/golang:1.11
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "1e:5c:d9:fc:7e:1f:e4:60:34:44:5c:97:10:60:31:2a"
       - setup_remote_docker
       - checkout
       - run:
