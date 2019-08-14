@@ -8,6 +8,5 @@ jobs:
     - name: checkout repo
       uses: actions/checkout@master      
     - name: Build
-      working-directory: ${{ go.module-path }}
       run: docker build -t docker.pkg.github.com/nais/testapp/testapp:latest .
    
