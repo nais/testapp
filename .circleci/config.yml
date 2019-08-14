@@ -10,7 +10,7 @@ jobs:
       - run:
           name: Create a new release
           command: |
-            docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
+            docker login docker.pkg.github.com -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
             version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
             docker build -t docker.pkg.github.com/nais/testapp/testapp:latest -t docker.pkg.github.com/testapp:${version} .
             docker push docker.pkg.github.com/testapp
