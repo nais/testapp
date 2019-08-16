@@ -1,4 +1,4 @@
-name: go
+name: build and push
 on: [push]
 jobs:
   build:
@@ -7,6 +7,11 @@ jobs:
     steps:
     - name: checkout repo
       uses: actions/checkout@master      
-    - name: Build
-      run: docker build -t docker.pkg.github.com/nais/testapp/testapp:latest .
-   
+    - name: build + push
+        run: |
+          version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
+          image_prefix=docker.pkg.github.com/nais/testapp/testapp
+          docker build -t ${image_prefix}:latest -t ${image_prefix}:${version} .
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${{ secrets.GITHUB_USERNAME }} --password-stdin
+          docker push ${image_prefix}:latest
+          docker push ${image_prefix}:${version} docker build -t docker.pkg.github.com/nais/testapp/testapp:latest .
