@@ -8,7 +8,7 @@ jobs:
     - name: checkout repo
       uses: actions/checkout@master      
     - name: build + push
-        run: |
+      run: |
           version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
           image_prefix=docker.pkg.github.com/nais/testapp/testapp
           docker build -t ${image_prefix}:latest -t ${image_prefix}:${version} .
