@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/jhrv/testapp/pkg/version"
+	"github.com/nais/testapp/pkg/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -33,7 +33,6 @@ func init() {
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Parse()
 }
-
 
 func main() {
 	interrupt := make(chan os.Signal, 1)
@@ -74,7 +73,6 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-
 	r.HandleFunc("/connect", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -88,7 +86,7 @@ func main() {
 		if err != nil {
 			log.Error("error reading response body", err)
 		}
-		fmt.Fprintf(w,"HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
+		fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
 
 	log.Println("running @", bindAddr)

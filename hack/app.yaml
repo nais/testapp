@@ -23,7 +23,7 @@ spec:
         app: {{ app }}
     spec:
       containers:
-      - image: jhrv/testapp:latest
+      - image: nais/testapp:latest
         imagePullPolicy: Always
         name: {{ app }}
         ports:

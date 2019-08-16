@@ -1,4 +1,4 @@
-module github.com/jhrv/testapp
+module github.com/nais/testapp
 
 require (
 	github.com/gorilla/mux v1.6.2
