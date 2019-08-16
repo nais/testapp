@@ -6,7 +6,7 @@ metadata:
   labels:
     team: aura
 spec:
-  image: jhrv/testapp:latest
+  image: docker.pkg.github.com/nais/testapp/testapp:latest
   port: 8080
   liveness:
     path: /ping
@@ -16,7 +16,7 @@ spec:
     min: 2
     max: 4
   ingresses: 
-    - "https://testapp.nais.preprod.local"
+    - "https://testapp.dev-fss.nais.io"
   env:
     - name: MY_CUSTOM_VAR
       value: some_value
