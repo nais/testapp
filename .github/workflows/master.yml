@@ -14,4 +14,4 @@ jobs:
           docker build -t ${image_prefix}:latest -t ${image_prefix}:${version} .
           echo ${{ secrets.GITHUB_PASSWORD }} | docker login docker.pkg.github.com --username ${{ secrets.GITHUB_USERNAME }} --password-stdin
           docker push ${image_prefix}:latest
-          docker push ${image_prefix}:${version} docker build -t docker.pkg.github.com/nais/testapp/testapp:latest .
+          docker push ${image_prefix}:${version}
