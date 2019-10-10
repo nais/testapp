@@ -1,7 +1,7 @@
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
-  name: johnny
+  name: testapp
   namespace: default
   labels:
     team: aura
