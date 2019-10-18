@@ -5,3 +5,6 @@ LDFLAGS := -X github.com/nais/testapp/pkg/version.Revision=$(shell git rev-parse
 
 release:
 	go build -a -installsuffix cgo -o testapp -ldflags "-s $(LDFLAGS)"
+
+local:
+	go run *.go --bind-address=127.0.0.1:8080 --bucket-name=testapp_ci-gcp --service-account-credentials-file=./serviceaccount.json
