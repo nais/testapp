@@ -34,7 +34,7 @@ func init() {
 
 	flag.StringVar(&bindAddr, "bind-address", ":8080", "ip:port where http requests are served")
 	flag.StringVar(&pingResponse, "ping-response", "pong\n", "what to respond when pinged")
-	flag.StringVar(&bucketName, "bucket-name", "", "name of bucket used with /{read,write}bucket")
+	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&serviceAccountCredentialsFile, "service-account-credentials-file", "/var/run/secrets/testapp-serviceaccount.json", "path to service account credentials file")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
