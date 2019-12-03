@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"cloud.google.com/go/storage"
 	"context"
 	"crypto/tls"
@@ -17,6 +18,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -172,6 +174,50 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 	}).Methods(http.MethodPost)
 
+	r.HandleFunc("/writedb", func(w http.ResponseWriter, r *http.Request) {
+		db := connectToDb()
+
+		stmt := `CREATE TABLE IF NOT EXISTS test (
+                        timestamp  BIGINT,
+                        data     VARCHAR(255)
+                )`
+		_, err := db.Exec(stmt)
+		if err != nil {
+			log.Errorf("failed creating table, error was: %s", err)
+		}
+
+		stmt = `INSERT INTO test (timestamp, data) VALUES ($1, $2)`
+		_, err = db.Exec(stmt, time.Now().UnixNano(), "test")
+		if err != nil {
+			log.Errorf("failed inserting to table, error was: %s", err)
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		log.Infof("db stats: %+v", db.Stats())
+	})
+
+	r.HandleFunc("/readdb", func(w http.ResponseWriter, r *http.Request) {
+		db := connectToDb()
+
+		rows, err := db.Query("SELECT timestamp, data FROM test ORDER BY timestamp DESC LIMIT $1", 1000000000)
+		if err != nil {
+			log.Errorf("could not get rows: %v", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+
+			var row interface{}
+			_ = rows.Scan(&row)
+
+			log.Infof("%+v", row)
+		}
+
+		if rows.Err() != nil {
+			log.Error("query error: %v", rows.Err())
+		}
+	})
+
 	log.Println("running @", bindAddr)
 	server := &http.Server{Addr: bindAddr, Handler: r}
 
@@ -198,4 +244,19 @@ func verifyBucketPrerequisites() error {
 	}
 
 	return nil
+}
+
+func connectToDb() *sql.DB {
+	postgresConnection := fmt.Sprintf("user=%s password=%s dbname=%s host=%s sslmode=disable",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_DATABASE"),
+		os.Getenv("DB_HOST"))
+
+	db, err := sql.Open("postgres", postgresConnection)
+	if err != nil {
+		log.Errorf("failed to connect to database, error was: %s", err)
+	}
+
+	return db
 }
