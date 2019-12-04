@@ -1,12 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"cloud.google.com/go/storage"
 	"context"
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 	"github.com/nais/testapp/pkg/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -18,7 +19,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	_ "github.com/lib/pq"
 )
 
 var (
@@ -29,6 +29,10 @@ var (
 	bucketName                    string
 	serviceAccountCredentialsFile string
 	bucketObjectName              string
+	dbUser                        string
+	dbPassword                    string
+	dbHost                        string
+	dbName                        string
 )
 
 func init() {
@@ -40,8 +44,20 @@ func init() {
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&serviceAccountCredentialsFile, "service-account-credentials-file", "/var/run/secrets/testapp-serviceaccount.json", "path to service account credentials file")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
+	flag.StringVar(&dbName, "db-name", getEnv("DB_NAME", "sqldatabase"), "database name")
+	flag.StringVar(&dbUser, "db-user", getEnv("DB_USER", "sqluser"), "database username")
+	flag.StringVar(&dbPassword, "db-password", os.Getenv("DB_PASSWORD"), "database password")
+	flag.StringVar(&dbHost, "db-hostname", os.Getenv("DB_HOST"), "database hostname")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Parse()
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return fallback
 }
 
 func main() {
@@ -55,22 +71,22 @@ func main() {
 
 	r.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, pingResponse)
+		_, _ = fmt.Fprint(w, pingResponse)
 	})
 
 	r.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s (rev: %s)", version.Version, version.Revision)
+		_, _ = fmt.Fprintf(w, "%s (rev: %s)", version.Version, version.Revision)
 	})
 
 	r.HandleFunc("/hostname", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, hostname)
+		_, _ = fmt.Fprint(w, hostname)
 	})
 
 	r.HandleFunc("/env", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, os.Environ())
+		_, _ = fmt.Fprint(w, os.Environ())
 	})
 
 	r.HandleFunc("/log", func(w http.ResponseWriter, _ *http.Request) {
@@ -89,7 +105,7 @@ func main() {
 		resp, err := http.Get(connectURL)
 		if err != nil {
 			log.Error("error performing http get with url", connectURL, err)
-			fmt.Fprintf(w, "error performing http get")
+			_, _ = fmt.Fprintf(w, "error performing http get")
 			return
 		}
 
@@ -97,12 +113,12 @@ func main() {
 		if err != nil {
 			log.Error("error reading response body", err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "error reading response body")
+			_, _ = fmt.Fprint(w, "error reading response body")
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
+		_, _ = fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
 
 	r.HandleFunc("/readbucket", func(w http.ResponseWriter, _ *http.Request) {
@@ -133,13 +149,13 @@ func main() {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write(res)
+		_, _ = w.Write(res)
 	})
 
 	r.HandleFunc("/writebucket", func(w http.ResponseWriter, r *http.Request) {
 		if err := verifyBucketPrerequisites(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 
@@ -147,9 +163,10 @@ func main() {
 		d := string(body)
 		if len(d) > 5 || len(d) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("cannot be empty or more than 5 characters"))
+			_, _ = w.Write([]byte("cannot be empty or more than 5 characters"))
 			return
 		}
+		defer r.Body.Close()
 
 		client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(serviceAccountCredentialsFile))
 
@@ -175,46 +192,109 @@ func main() {
 	}).Methods(http.MethodPost)
 
 	r.HandleFunc("/writedb", func(w http.ResponseWriter, r *http.Request) {
-		db := connectToDb()
+		if err := verifyDbPrerequisites(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		d := string(body)
+		if len(d) > 5 || len(d) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("cannot be empty or more than 5 characters"))
+			return
+		}
+
+		defer r.Body.Close()
+
+		db, err := connectToDb()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 
 		stmt := `CREATE TABLE IF NOT EXISTS test (
                         timestamp  BIGINT,
                         data     VARCHAR(255)
                 )`
-		_, err := db.Exec(stmt)
+
+		_, err = db.Exec(stmt)
+
 		if err != nil {
 			log.Errorf("failed creating table, error was: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
 		}
 
-		stmt = `INSERT INTO test (timestamp, data) VALUES ($1, $2)`
-		_, err = db.Exec(stmt, time.Now().UnixNano(), "test")
+		// Ensure empty table.
+		stmt = `TRUNCATE TABLE test`
+		_, err = db.Exec(stmt)
+		if err != nil {
+			log.Errorf("failed to truncate table: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		stmt = ` INSERT INTO test (timestamp, data) VALUES ($1, $2)`
+		_, err = db.Exec(stmt, time.Now().UnixNano(), d)
 		if err != nil {
 			log.Errorf("failed inserting to table, error was: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		log.Infof("db stats: %+v", db.Stats())
-	})
+	}).Methods(http.MethodPost)
 
 	r.HandleFunc("/readdb", func(w http.ResponseWriter, r *http.Request) {
-		db := connectToDb()
+		if err := verifyDbPrerequisites(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 
-		rows, err := db.Query("SELECT timestamp, data FROM test ORDER BY timestamp DESC LIMIT $1", 1000000000)
+		db, err := connectToDb()
+
+		if err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		rows, err := db.Query("SELECT data FROM test")
+
 		if err != nil {
 			log.Errorf("could not get rows: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
 		}
+
 		defer rows.Close()
 
-		for rows.Next() {
+		if rows.Next() {
+			row := make([]byte, 10)
+			err = rows.Scan(&row)
 
-			var row interface{}
-			_ = rows.Scan(&row)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
 
-			log.Infof("%+v", row)
-		}
+			log.Infof("%s", row)
 
-		if rows.Err() != nil {
-			log.Error("query error: %v", rows.Err())
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(row)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			return
 		}
 	})
 
@@ -231,9 +311,16 @@ func main() {
 	time.Sleep(time.Duration(gracefulShutdownPeriodSeconds) * time.Duration(time.Second))
 	log.Print("shutting down")
 
-	server.Shutdown(context.Background())
+	_ = server.Shutdown(context.Background())
 }
 
+func verifyDbPrerequisites() error {
+	if len(dbHost) == 0 || len(dbPassword) == 0 {
+		return fmt.Errorf("missing required database config")
+	}
+
+	return nil
+}
 func verifyBucketPrerequisites() error {
 	if len(bucketName) == 0 {
 		return fmt.Errorf("missing bucket-name")
@@ -246,17 +333,17 @@ func verifyBucketPrerequisites() error {
 	return nil
 }
 
-func connectToDb() *sql.DB {
+func connectToDb() (*sql.DB, error) {
 	postgresConnection := fmt.Sprintf("user=%s password=%s dbname=%s host=%s sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_DATABASE"),
-		os.Getenv("DB_HOST"))
+		dbUser,
+		dbPassword,
+		dbName,
+		dbHost)
 
 	db, err := sql.Open("postgres", postgresConnection)
 	if err != nil {
-		log.Errorf("failed to connect to database, error was: %s", err)
+		return nil, fmt.Errorf("failed to connect to database, error was: %s", err)
 	}
 
-	return db
+	return db, nil
 }
