@@ -3,22 +3,19 @@ package bucket
 import (
 	"cloud.google.com/go/storage"
 	"context"
-	"fmt"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/api/option"
 	"io/ioutil"
 	"net/http"
-	"os"
 )
 
-func ReadBucketHandler(bucketName, bucketObjectName, serviceAccountCredentialsFile string) func(w http.ResponseWriter, _ *http.Request) {
+func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
-		if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-		}
+		//if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	w.Write([]byte(err.Error()))
+		//}
 
-		client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(serviceAccountCredentialsFile))
+		client, err := storage.NewClient(context.Background())
 		if err != nil {
 			log.Errorf("error creating storage client: %s", err)
 		}
@@ -45,13 +42,13 @@ func ReadBucketHandler(bucketName, bucketObjectName, serviceAccountCredentialsFi
 
 }
 
-func WriteBucketHandler(bucketName, bucketObjectName, serviceAccountCredentialsFile string) func(w http.ResponseWriter, r *http.Request) {
+func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
+		//if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	_, _ = w.Write([]byte(err.Error()))
+		//	return
+		//}
 
 		body, err := ioutil.ReadAll(r.Body)
 		d := string(body)
@@ -62,7 +59,7 @@ func WriteBucketHandler(bucketName, bucketObjectName, serviceAccountCredentialsF
 		}
 		defer r.Body.Close()
 
-		client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(serviceAccountCredentialsFile))
+		client, err := storage.NewClient(context.Background())
 
 		if err != nil {
 			log.Errorf("error creating storage client: %s", err)
@@ -86,14 +83,14 @@ func WriteBucketHandler(bucketName, bucketObjectName, serviceAccountCredentialsF
 	}
 }
 
-func verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile string) error {
-	if len(bucketName) == 0 {
-		return fmt.Errorf("missing bucket-name")
-	}
-
-	if _, err := os.Stat(serviceAccountCredentialsFile); err != nil {
-		return fmt.Errorf("missing service account credentials")
-	}
-
-	return nil
-}
+//func verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile string) error {
+//	if len(bucketName) == 0 {
+//		return fmt.Errorf("missing bucket-name")
+//	}
+//
+//	if _, err := os.Stat(serviceAccountCredentialsFile); err != nil {
+//		return fmt.Errorf("missing service account credentials")
+//	}
+//
+//	return nil
+//}
