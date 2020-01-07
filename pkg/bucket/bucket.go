@@ -10,11 +10,6 @@ import (
 
 func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
-		//if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
-		//	w.WriteHeader(http.StatusInternalServerError)
-		//	w.Write([]byte(err.Error()))
-		//}
-
 		client, err := storage.NewClient(context.Background())
 		if err != nil {
 			log.Errorf("error creating storage client: %s", err)
@@ -44,12 +39,6 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 
 func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//if err := verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile); err != nil {
-		//	w.WriteHeader(http.StatusInternalServerError)
-		//	_, _ = w.Write([]byte(err.Error()))
-		//	return
-		//}
-
 		body, err := ioutil.ReadAll(r.Body)
 		d := string(body)
 		if len(d) > 5 || len(d) == 0 {
@@ -82,15 +71,3 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		w.WriteHeader(http.StatusCreated)
 	}
 }
-
-//func verifyBucketPrerequisites(bucketName, serviceAccountCredentialsFile string) error {
-//	if len(bucketName) == 0 {
-//		return fmt.Errorf("missing bucket-name")
-//	}
-//
-//	if _, err := os.Stat(serviceAccountCredentialsFile); err != nil {
-//		return fmt.Errorf("missing service account credentials")
-//	}
-//
-//	return nil
-//}

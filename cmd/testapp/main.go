@@ -26,7 +26,6 @@ var (
 	connectURL                    string
 	gracefulShutdownPeriodSeconds int
 	bucketName                    string
-	//serviceAccountCredentialsFile string
 	bucketObjectName              string
 	dbUser                        string
 	dbPassword                    string
@@ -41,7 +40,6 @@ func init() {
 	flag.StringVar(&pingResponse, "ping-response", "pong\n", "what to respond when pinged")
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
-	//flag.StringVar(&serviceAccountCredentialsFile, "service-account-credentials-file", "/var/run/secrets/testapp-serviceaccount.json", "path to service account credentials file")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
 	flag.StringVar(&dbName, "db-name", getEnv("DB_NAME", "sqldatabase"), "database name")
 	flag.StringVar(&dbUser, "db-user", getEnv("DB_USER", "sqluser"), "database username")
