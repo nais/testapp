@@ -79,7 +79,7 @@ func ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(w http.
 			return
 		}
 
-		db, err := connectToDb(dbUser, dbHost, dbName, dbHost)
+		db, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
 
 		if err != nil {
 			log.Error(err)
