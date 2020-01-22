@@ -1,2 +1,5 @@
 .idea
 go.sum
+bin
+testapp
+!testapp/
