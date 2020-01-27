@@ -11,10 +11,12 @@ jobs:
           version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
           gpr_image_prefix=docker.pkg.github.com/nais/testapp/testapp
           dh_image_prefix=navikt/testapp
-          docker build -t ${dh_image_prefix}:latest -t ${dh_image_prefix}:${version} -t ${gpr_image_prefix}:latest -t ${grp_image_prefix}:${version} .
-          echo ${{ secrets.GITHUB_PASSWORD }} | docker login docker.pkg.github.com --username ${{ secrets.GITHUB_USERNAME }} --password-stdin
-          docker push ${gpr_image_prefix}:latest
-          docker push ${gpr_image_prefix}:${version}
+          echo $dh_image_prefix
+          docker build -t ${dh_image_prefix}:latest -t ${dh_image_prefix}:${version} .
+          #docker build -t ${dh_image_prefix}:latest -t ${dh_image_prefix}:${version} -t ${gpr_image_prefix}:latest -t ${grp_image_prefix}:${version} .
+          #echo ${{ secrets.GITHUB_PASSWORD }} | docker login docker.pkg.github.com --username ${{ secrets.GITHUB_USERNAME }} --password-stdin
+          #docker push ${gpr_image_prefix}:latest
+          #docker push ${gpr_image_prefix}:${version}
           echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
           docker push ${dh_image_prefix}:latest
           docker push ${dh_image_prefix}:${version}
