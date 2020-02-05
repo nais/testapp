@@ -79,5 +79,7 @@ func closeStorageReader(reader *storage.Reader) {
 		if err != nil {
 			log.Errorf("Failed to close storage reader: %s", err)
 		}
+	} else {
+		log.Warn("Attempted to close nil reader")
 	}
 }
