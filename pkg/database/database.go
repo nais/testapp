@@ -28,6 +28,7 @@ func WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(http.R
 		defer r.Body.Close()
 
 		db, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
+		defer db.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
@@ -80,6 +81,7 @@ func ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(w http.
 		}
 
 		db, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
+		defer db.Close()
 
 		if err != nil {
 			log.Error(err)
