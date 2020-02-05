@@ -41,7 +41,7 @@ func init() {
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
-	flag.StringVar(&dbName, "db-name", "testapp", "database name")
+	flag.StringVar(&dbName, "db-name", getEnv("DB_NAME", "testapp"), "database name")
 	flag.StringVar(&dbUser, "db-user", getEnv("GCP_SQLINSTANCE_TESTAPP_USERNAME", "testapp"), "database username")
 	flag.StringVar(&dbPassword, "db-password", os.Getenv("GCP_SQLINSTANCE_TESTAPP_PASSWORD"), "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
