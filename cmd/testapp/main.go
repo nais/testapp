@@ -21,6 +21,7 @@ import (
 )
 
 var (
+	appName                       string
 	bindAddr                      string
 	pingResponse                  string
 	connectURL                    string
@@ -41,9 +42,10 @@ func init() {
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
-	flag.StringVar(&dbName, "db-name", getEnv("DB_NAME", "testapp"), "database name")
-	flag.StringVar(&dbUser, "db-user", getEnv("GCP_SQLINSTANCE_TESTAPP_USERNAME", "testapp"), "database username")
-	flag.StringVar(&dbPassword, "db-password", os.Getenv("GCP_SQLINSTANCE_TESTAPP_PASSWORD"), "database password")
+	flag.StringVar(&appName, "app-name", getEnv("APP_NAME", "testapp"), "application name (used when having several instances of application running in same namespace)")
+	flag.StringVar(&dbName, "db-name", getEnv("APP_NAME", "testapp"), "database name")
+	flag.StringVar(&dbUser, "db-user", getEnv(fmt.Sprintf("GCP_SQLINSTANCE_%s_USERNAME", appName), "testapp"), "database username")
+	flag.StringVar(&dbPassword, "db-password", os.Getenv(fmt.Sprintf("GCP_SQLINSTANCE_%s_PASSWORD", appName)), "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Parse()
