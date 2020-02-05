@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -44,8 +45,8 @@ func init() {
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
 	flag.StringVar(&appName, "app-name", getEnv("APP_NAME", "testapp"), "application name (used when having several instances of application running in same namespace)")
 	flag.StringVar(&dbName, "db-name", getEnv("APP_NAME", "testapp"), "database name")
-	flag.StringVar(&dbUser, "db-user", getEnv(fmt.Sprintf("GCP_SQLINSTANCE_%s_USERNAME", appName), "testapp"), "database username")
-	flag.StringVar(&dbPassword, "db-password", os.Getenv(fmt.Sprintf("GCP_SQLINSTANCE_%s_PASSWORD", appName)), "database password")
+	flag.StringVar(&dbUser, "db-user", getEnv(fmt.Sprintf("GCP_SQLINSTANCE_%s_USERNAME", strings.ToUpper(appName)), "testapp"), "database username")
+	flag.StringVar(&dbPassword, "db-password", os.Getenv(fmt.Sprintf("GCP_SQLINSTANCE_%s_PASSWORD", strings.ToUpper(appName))), "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Parse()
