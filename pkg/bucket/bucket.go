@@ -16,7 +16,7 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 		}
 
 		reader, err := client.Bucket(bucketName).Object(bucketObjectName).NewReader(context.Background())
-		defer reader.Close()
+		defer closeStorageReader(reader)
 
 		if err != nil {
 			log.Errorf("unable to create reader: %s", err)
@@ -69,5 +69,15 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		}
 
 		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+func closeStorageReader(reader *storage.Reader) {
+	if reader != nil {
+		err := reader.Close()
+
+		if err != nil {
+			log.Errorf("Failed to close storage reader: %s", err)
+		}
 	}
 }
