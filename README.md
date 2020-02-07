@@ -24,17 +24,16 @@ the docker container has the following binaries
 
 ## options
 ```
-Usage:
-      --bind-address string                       ip:port where http requests are served (default ":8080")
-      --bucket-name string                        name of bucket used with /{read,write}bucket
-      --bucket-object-name string                 name of bucket object used with /{read,write}bucket (default "test")
-      --connect-url string                        URL to connect to with /connect (default "https://google.com")
-      --db-hostname string                        database hostname
-      --db-name string                            database name (default "sqldatabase")
-      --db-password string                        database password
-      --db-user string                            database username (default "sqluser")
-      --graceful-shutdown-wait int                when receiving interrupt signal, it will wait this amount of seconds before shutting down server
-      --ping-response string                      what to respond when pinged (default "pong\n")
-      --service-account-credentials-file string   path to service account credentials file (default "/var/run/secrets/testapp-serviceaccount.json")
+      --app-name string              application name (used when having several instances of application running in same namespace) (default "testapp")
+      --bind-address string          ip:port where http requests are served (default ":8080")
+      --bucket-name string           name of bucket used with /{read,write}bucket
+      --bucket-object-name string    name of bucket object used with /{read,write}bucket (default "test")
+      --connect-url string           URL to connect to with /connect (default "https://google.com")
+      --db-hostname string           database hostname (default "localhost")
+      --db-name string               database name (default "testapp")
+      --db-password string           database password
+      --db-user string               database username (default "testapp")
+      --graceful-shutdown-wait int   when receiving interrupt signal, it will wait this amount of seconds before shutting down server
+      --ping-response string         what to respond when pinged (default "pong\n")
 
 ```
