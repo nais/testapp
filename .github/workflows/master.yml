@@ -7,14 +7,12 @@ jobs:
     steps:
     - uses: actions/checkout@master      
     - name: build + push
-      env: 
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
           version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
           gpr_image_prefix=docker.pkg.github.com/nais/testapp/testapp
           dh_image_prefix=navikt/testapp
           docker build -t ${dh_image_prefix}:latest -t ${dh_image_prefix}:${version} -t ${gpr_image_prefix}:latest -t ${gpr_image_prefix}:${version} .
-          echo ${{ GH_TOKEN }} | docker login docker.pkg.github.com --username x-access-token --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username x-access-token --password-stdin
           docker push ${gpr_image_prefix}:latest
           docker push ${gpr_image_prefix}:${version}
           echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
