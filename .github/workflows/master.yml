@@ -8,7 +8,7 @@ jobs:
     - uses: actions/checkout@master      
     - name: build + push
       env: 
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
           version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
           gpr_image_prefix=docker.pkg.github.com/nais/testapp/testapp
