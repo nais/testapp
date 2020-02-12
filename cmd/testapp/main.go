@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -27,6 +28,7 @@ var (
 	pingResponse                  string
 	connectURL                    string
 	gracefulShutdownPeriodSeconds int
+	deployStartTimestamp          int64
 	bucketName                    string
 	bucketObjectName              string
 	dbUser                        string
@@ -49,6 +51,7 @@ func init() {
 	flag.StringVar(&dbPassword, "db-password", os.Getenv(fmt.Sprintf("GCP_SQLINSTANCE_%s_PASSWORD", strings.ToUpper(appName))), "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
+	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
 	flag.Parse()
 }
 
@@ -60,10 +63,33 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func getEnvInt(key string, fallback int64) int64 {
+	if value, ok := os.LookupEnv(key); ok {
+		i, _ := strconv.ParseInt(value, 10, 64)
+		return i
+	}
+
+	return fallback
+}
+
+func timeSinceDeploy() float64 {
+	deployStartTime := time.Unix(0, deployStartTimestamp)
+	return time.Now().Sub(deployStartTime).Seconds()
+}
+
 func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 	hostname, _ := os.Hostname()
+
+	metrics.LeadTime.Set(timeSinceDeploy())
+	metrics.TimeSinceDeploy.Set(timeSinceDeploy())
+	tick := time.NewTicker(time.Second)
+	go func() {
+		for range tick.C {
+			metrics.TimeSinceDeploy.Set(timeSinceDeploy())
+		}
+	}()
 
 	r := mux.NewRouter()
 
