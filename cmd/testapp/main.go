@@ -8,8 +8,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/nais/testapp/pkg/bucket"
 	"github.com/nais/testapp/pkg/database"
+	"github.com/nais/testapp/pkg/metrics"
 	"github.com/nais/testapp/pkg/version"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 	"io/ioutil"
@@ -67,7 +67,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.Handle("/metrics", promhttp.Handler())
+	r.Handle("/metrics", metrics.Handler())
 
 	r.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
