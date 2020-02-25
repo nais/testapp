@@ -83,6 +83,9 @@ func main() {
 	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 	hostname, _ := os.Hostname()
 
+	metrics.StartTimestamp.SetToCurrentTime()
+	metrics.DeployTimestamp.Set(float64(deployStartTimestamp) / 10e8)
+
 	metrics.LeadTime.Set(timeSinceDeploy())
 	metrics.TimeSinceDeploy.Set(timeSinceDeploy())
 	tick := time.NewTicker(time.Second)
