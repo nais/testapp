@@ -4,14 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
-	"github.com/nais/testapp/pkg/bucket"
-	"github.com/nais/testapp/pkg/database"
-	"github.com/nais/testapp/pkg/metrics"
-	"github.com/nais/testapp/pkg/version"
-	log "github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,6 +12,15 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
+	"github.com/nais/testapp/pkg/bucket"
+	"github.com/nais/testapp/pkg/database"
+	"github.com/nais/testapp/pkg/metrics"
+	"github.com/nais/testapp/pkg/version"
+	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
 )
 
 var (
