@@ -3,10 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(http.ResponseWriter, *http.Request) {
