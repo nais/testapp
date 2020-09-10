@@ -128,6 +128,16 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	r.HandleFunc("/header-test", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Add("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		w.Header().Add("X-XSS-Protection", "1; mode=block")
+		w.Header().Add("Referrer-Policy", "no-referrer-when-downgrade")
+
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.HandleFunc("/connect", func(w http.ResponseWriter, _ *http.Request) {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
