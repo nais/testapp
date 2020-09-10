@@ -128,7 +128,8 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	r.HandleFunc("/header-test", func(w http.ResponseWriter, _ *http.Request) {
+	r.HandleFunc("/header-test", func(w http.ResponseWriter, r *http.Request) {
+		log.Infof("Headers: %+v", r.Header)
 		w.Header().Add("X-Frame-Options", "SAMEORIGIN")
 		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		w.Header().Add("X-Content-Type-Options", "nosniff")
