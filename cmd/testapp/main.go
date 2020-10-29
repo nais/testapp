@@ -37,6 +37,13 @@ var (
 	dbName                        string
 )
 
+var (
+	dbAppName         = strings.ToUpper(strings.Replace(getEnv("NAIS_APP_NAME", "TESTAPP"), "-", "_", -1))
+	defaultDbPassword = os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_PASSWORD", dbAppName))
+	defaultDbUsername = os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_USERNAME", dbAppName))
+	defaultDbName     = os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_DATABASE", dbAppName))
+)
+
 func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 
@@ -45,23 +52,13 @@ func init() {
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
-	flag.StringVar(&dbName, "db-name", dbAppName, "database name")
-	flag.StringVar(&dbUser, "db-user", defaultDbUsername(), "database username")
-	flag.StringVar(&dbPassword, "db-password", defaultDbPassword(), "database password")
+	flag.StringVar(&dbName, "db-name", defaultDbName, "database name")
+	flag.StringVar(&dbUser, "db-user", defaultDbUsername, "database username")
+	flag.StringVar(&dbPassword, "db-password", defaultDbPassword, "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
 	flag.Parse()
-}
-
-var dbAppName = strings.ToUpper(strings.Replace(getEnv("NAIS_APP_NAME", "TESTAPP"), "-", "_", -1))
-
-func defaultDbPassword() string {
-	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_PASSWORD", dbAppName))
-}
-
-func defaultDbUsername() string {
-	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_USERNAME", dbAppName))
 }
 
 func getEnv(key, fallback string) string {
