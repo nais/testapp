@@ -24,7 +24,6 @@ import (
 )
 
 var (
-	appName                       string
 	bindAddr                      string
 	pingResponse                  string
 	connectURL                    string
@@ -46,8 +45,7 @@ func init() {
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
-	flag.StringVar(&appName, "app-name", getEnv("APP_NAME", "testapp"), "application name (used when having several instances of application running in same namespace)")
-	flag.StringVar(&dbName, "db-name", getEnv("APP_NAME", "testapp"), "database name")
+	flag.StringVar(&dbName, "db-name", dbAppName, "database name")
 	flag.StringVar(&dbUser, "db-user", defaultDbUsername(), "database username")
 	flag.StringVar(&dbPassword, "db-password", defaultDbPassword(), "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
