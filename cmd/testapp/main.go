@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -55,12 +56,14 @@ func init() {
 	flag.Parse()
 }
 
+var dbAppName = strings.ToUpper(strings.Replace(getEnv("NAIS_APP_NAME", "TESTAPP"), "-", "_", -1))
+
 func defaultDbPassword() string {
-	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_PASSWORD", getEnv("NAIS_APP_NAME", "TESTAPP")))
+	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_PASSWORD", dbAppName))
 }
 
 func defaultDbUsername() string {
-	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_USERNAME", getEnv("NAIS_APP_NAME", "TESTAPP")))
+	return os.Getenv(fmt.Sprintf("NAIS_DATABASE_%[1]s_%[1]s_USERNAME", dbAppName))
 }
 
 func getEnv(key, fallback string) string {
@@ -184,7 +187,7 @@ func main() {
 	<-interrupt
 
 	log.Printf("allowing %d seconds to shut down gracefully", gracefulShutdownPeriodSeconds)
-	time.Sleep(time.Duration(gracefulShutdownPeriodSeconds) * time.Duration(time.Second))
+	time.Sleep(time.Duration(gracefulShutdownPeriodSeconds) * time.Second)
 	log.Print("shutting down")
 
 	_ = server.Shutdown(context.Background())
