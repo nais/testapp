@@ -10,7 +10,7 @@ jobs:
       run: |
         version="$(date '+%Y-%m-%d')-$(git --no-pager log -1 --pretty=%h)"
         prefix=ghcr.io/nais/testapp
-        docker image build -t ${image_prefix}:latest -t ${image_prefix}:${version} .
+        docker image build -t ${prefix}:latest -t ${prefix}:${version} .
         echo "image_version=$version" >> $GITHUB_ENV
         echo "image_prefix=$prefix" >> $GITHUB_ENV
     - name: Login to GitHub Container Registry
