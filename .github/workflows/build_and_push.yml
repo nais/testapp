@@ -10,11 +10,7 @@ jobs:
       run: |
           version=$(date "+%Y-%m-%d")-$(git --no-pager log -1 --pretty=%h)
           ghcr_image_prefix=ghcr.io/nais/testapp
-          dh_image_prefix=navikt/testapp
-          docker image build -t ${dh_image_prefix}:latest -t ${dh_image_prefix}:${version} -t ${ghcr_image_prefix}:latest -t ${ghcr_image_prefix}:${version} .
-          echo ${{ secrets.NAIS_ORG_GHCR_TOKEN }} | docker login ghcr.io --username x-access-token --password-stdin
+          docker image build -t ${ghcr_image_prefix}:latest -t ${ghcr_image_prefix}:${version} .
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io --username ${{ github.actor }} --password-stdin
           docker image push ${ghcr_image_prefix}:latest
           docker image push ${ghcr_image_prefix}:${version}
-          echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-          docker image push ${dh_image_prefix}:latest
-          docker image push ${dh_image_prefix}:${version}
