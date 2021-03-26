@@ -9,9 +9,10 @@ jobs:
     - name: docker build & test (in Dockerfile)
       run: |
         version="$(date '+%Y-%m-%d')-$(git --no-pager log -1 --pretty=%h)"
-        ghcr_image_prefix=ghcr.io/nais/testapp
-        docker image build -t ${ghcr_image_prefix}:latest -t ${ghcr_image_prefix}:${version} .
+        image_prefix=ghcr.io/nais/testapp
+        docker image build -t ${image_prefix}:latest -t ${image_prefix}:${version} .
         echo "image_version=$version" >> $GITHUB_ENV
+        echo "ghcr_image_prefix=$image_prefix" >> $GITHUB_ENV
     - name: Login to GitHub Container Registry
       uses: docker/login-action@ab80d026d4753220c4243394c07c7d80f9638d06 # Use commit-sha1 instead of tag for security concerns
       with:
