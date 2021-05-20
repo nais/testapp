@@ -21,12 +21,24 @@ func gauge(name, help string) prometheus.Gauge {
 	})
 }
 
+func histogram(name, help string) prometheus.Histogram {
+	return prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: subsystem,
+		Name:      name,
+		Help:      help,
+		Buckets:   []float64{1.0, 2.5, 5.0, 10.0, 30.0, 60.0},
+	})
+}
+
 var (
 	LeadTime        = gauge("lead_time", "Seconds used in deployment pipeline, from making the request until the application is available")
 	TimeSinceDeploy = gauge("time_since_deploy", "Seconds since the latest deploy of this application")
 
 	DeployTimestamp = gauge("deploy_timestamp", "Timestamp when the deploy of this application was triggered in the pipeline")
 	StartTimestamp  = gauge("start_timestamp", "Start time of the application")
+	BucketWrite     = histogram("bucket_write_latency", "The time it takes to write to the bucket")
+	BucketRead      = histogram("bucket_read_latency", "The time it takes to read from the bucket")
 )
 
 func init() {
@@ -34,6 +46,8 @@ func init() {
 	prometheus.MustRegister(TimeSinceDeploy)
 	prometheus.MustRegister(DeployTimestamp)
 	prometheus.MustRegister(StartTimestamp)
+	prometheus.MustRegister(BucketWrite)
+	prometheus.MustRegister(BucketRead)
 }
 
 func Handler() http.Handler {
