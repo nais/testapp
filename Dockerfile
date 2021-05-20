@@ -1,4 +1,4 @@
-FROM golang:1.11-alpine as builder
+FROM golang:1.16-alpine as builder
 RUN apk add --no-cache git make
 ENV GOOS=linux
 ENV CGO_ENABLED=0
@@ -6,8 +6,9 @@ ENV GO111MODULE=on
 COPY . /src
 WORKDIR /src
 RUN rm -f go.sum
-RUN go get
-RUN go test ./...
+RUN go get ./...
+#No test files in testapp
+#RUN go test ./...
 RUN make release
 RUN go get github.com/rakyll/hey
 
