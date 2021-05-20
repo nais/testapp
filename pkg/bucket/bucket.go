@@ -35,6 +35,7 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 			return
 		}
 		latency := time.Since(start)
+		log.Infof("read from bucket took %d ms", latency.Milliseconds())
 		metrics.BucketRead.Observe(float64(latency.Milliseconds()))
 
 		w.WriteHeader(http.StatusOK)
@@ -68,6 +69,7 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 			return
 		}
 		latency := time.Since(start)
+		log.Infof("write to bucket took %d ms", latency.Milliseconds())
 		metrics.BucketWrite.Observe(float64(latency.Milliseconds()))
 		if err := writer.Close(); err != nil {
 			log.Errorf("unable to close bucket writer: %s", err)
