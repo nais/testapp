@@ -27,7 +27,7 @@ func histogram(name, help string) prometheus.Histogram {
 		Subsystem: subsystem,
 		Name:      name,
 		Help:      help,
-		Buckets:   []float64{0.001, 0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384},
+		Buckets:   []float64{10000, 100000, 1000000, 2000000, 4000000, 8000000},
 	})
 }
 
