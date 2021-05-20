@@ -37,8 +37,8 @@ var (
 
 	DeployTimestamp = gauge("deploy_timestamp", "Timestamp when the deploy of this application was triggered in the pipeline")
 	StartTimestamp  = gauge("start_timestamp", "Start time of the application")
-	BucketWrite     = histogram("bucket_write_latency", "The time it takes to write to the bucket")
-	BucketRead      = histogram("bucket_read_latency", "The time it takes to read from the bucket")
+	BucketWrite     = histogram("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
+	BucketRead      = histogram("bucket_read_latency", "The time it takes to read from the bucket in nanoseconds")
 )
 
 func init() {
