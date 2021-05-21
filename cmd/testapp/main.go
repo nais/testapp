@@ -134,6 +134,11 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	r.HandleFunc("/logdebug", func(w http.ResponseWriter, _ *http.Request) {
+		log.Debug("this is a debug log statement from testapp")
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.HandleFunc("/header-test", func(w http.ResponseWriter, r *http.Request) {
 		log.Infof("Headers: %+v", r.Header)
 		w.Header().Add("X-Frame-Options", "SAMEORIGIN")
@@ -172,6 +177,7 @@ func main() {
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
 
+	log.SetLevel(log.DebugLevel)
 	log.Println("running @", bindAddr)
 	server := &http.Server{Addr: bindAddr, Handler: r}
 

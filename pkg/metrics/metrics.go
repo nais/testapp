@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,15 +22,15 @@ func gauge(name, help string) prometheus.Gauge {
 	})
 }
 
-func histogram(name, help string) prometheus.Histogram {
-	return prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      name,
-		Help:      help,
-		Buckets:   []float64{10000, 100000, 1000000, 2000000, 4000000, 8000000},
-	})
-}
+//func histogram(name, help string) prometheus.Histogram {
+//	return prometheus.NewHistogram(prometheus.HistogramOpts{
+//		Namespace: namespace,
+//		Subsystem: subsystem,
+//		Name:      name,
+//		Help:      help,
+//		Buckets:   []float64{10000, 100000, 1000000, 2000000, 4000000, 8000000},
+//	})
+//}
 
 var (
 	LeadTime        = gauge("lead_time", "Seconds used in deployment pipeline, from making the request until the application is available")
@@ -37,8 +38,10 @@ var (
 
 	DeployTimestamp = gauge("deploy_timestamp", "Timestamp when the deploy of this application was triggered in the pipeline")
 	StartTimestamp  = gauge("start_timestamp", "Start time of the application")
-	BucketWrite     = histogram("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
-	BucketRead      = histogram("bucket_read_latency", "The time it takes to read from the bucket in nanoseconds")
+	BucketWrite = gauge("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
+	BucketRead = gauge("bucket_read_latency", "The time it takes to read to the bucket in nanoseconds")
+	DbInsert = gauge("db_insert", "The time it takes to insert to table")
+	DbRead = gauge("db_read", "The time it takes to read from table")
 )
 
 func init() {
@@ -48,6 +51,14 @@ func init() {
 	prometheus.MustRegister(StartTimestamp)
 	prometheus.MustRegister(BucketWrite)
 	prometheus.MustRegister(BucketRead)
+	prometheus.MustRegister(DbInsert)
+	prometheus.MustRegister(DbRead)
+}
+
+func SetLatencyMetric(start time.Time, gauge prometheus.Gauge) time.Duration {
+	latency := time.Since(start)
+	gauge.Set(float64(latency.Nanoseconds()))
+	return latency
 }
 
 func Handler() http.Handler {
