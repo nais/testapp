@@ -35,6 +35,7 @@ var (
 	dbPassword                    string
 	dbHost                        string
 	dbName                        string
+	debug                         bool
 )
 
 var (
@@ -56,6 +57,7 @@ func init() {
 	flag.StringVar(&dbUser, "db-user", defaultDbUsername, "database username")
 	flag.StringVar(&dbPassword, "db-password", defaultDbPassword, "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
+	flag.BoolVar(&debug, "debug", getEnvBool("DEBUG", false), "debug log")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
 	flag.Parse()
@@ -66,6 +68,14 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 
+	return fallback
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		b, _ := strconv.ParseBool(value)
+		return b
+	}
 	return fallback
 }
 
@@ -135,7 +145,11 @@ func main() {
 	})
 
 	r.HandleFunc("/logdebug", func(w http.ResponseWriter, _ *http.Request) {
-		log.Debug("this is a debug log statement from testapp")
+		if debug {
+			log.Debug("this is a debug log statement from testapp")
+		} else {
+			log.Info("this would have been a debug log statement from testapp if debug was enabled")
+		}
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -171,14 +185,15 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
-
 	r.HandleFunc("/readbucket", bucket.ReadBucketHandler(bucketName, bucketObjectName))
 	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
 
-	log.SetLevel(log.DebugLevel)
-	log.Println("running @", bindAddr)
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
+	log.Info("running @", bindAddr)
 	server := &http.Server{Addr: bindAddr, Handler: r}
 
 	go func() {
