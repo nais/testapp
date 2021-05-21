@@ -28,10 +28,10 @@ var (
 
 	DeployTimestamp = gauge("deploy_timestamp", "Timestamp when the deploy of this application was triggered in the pipeline")
 	StartTimestamp  = gauge("start_timestamp", "Start time of the application")
-	BucketWrite = gauge("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
-	BucketRead = gauge("bucket_read_latency", "The time it takes to read to the bucket in nanoseconds")
-	DbInsert = gauge("db_insert_latency", "The time it takes to insert to table")
-	DbRead = gauge("db_read_latency", "The time it takes to read from table")
+	BucketWrite     = gauge("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
+	BucketRead      = gauge("bucket_read_latency", "The time it takes to read to the bucket in nanoseconds")
+	DbInsert        = gauge("db_insert_latency", "The time it takes to insert to table")
+	DbRead          = gauge("db_read_latency", "The time it takes to read from table")
 )
 
 func init() {
