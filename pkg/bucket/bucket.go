@@ -67,14 +67,14 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		latency := metrics.SetLatencyMetric(start, metrics.BucketWrite)
-		log.Debugf("write to bucket took %d ns", latency.Nanoseconds())
 
 		if err := writer.Close(); err != nil {
 			log.Errorf("unable to close bucket writer: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		latency := metrics.SetLatencyMetric(start, metrics.BucketWrite)
+		log.Debugf("write to bucket took %d ns", latency.Nanoseconds())
 		w.WriteHeader(http.StatusCreated)
 	}
 }
