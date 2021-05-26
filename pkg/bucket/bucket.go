@@ -91,9 +91,7 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 
 func cacheControl(cacheControl string) storage.ObjectAttrsToUpdate {
 	objectAttrsToUpdate := storage.ObjectAttrsToUpdate{
-		Metadata: map[string]string{
-			"Cache-Control": cacheControl,
-		},
+		CacheControl: cacheControl,
 	}
 	return objectAttrsToUpdate
 }
