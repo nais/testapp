@@ -54,12 +54,21 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		}
 		defer r.Body.Close()
 
-		client, err := storage.NewClient(context.Background())
+		ctx := context.Background()
+		client, err := storage.NewClient(ctx)
 		if err != nil {
 			log.Errorf("error creating storage client: %s", err)
 		}
+		defer client.Close()
 
-		writer := client.Bucket(bucketName).Object(bucketObjectName).NewWriter(context.Background())
+		o := client.Bucket(bucketName).Object(bucketObjectName)
+		objectAttrsToUpdate := cacheControl("no-cache")
+
+		if _, err := o.Update(ctx, objectAttrsToUpdate); err != nil {
+			log.Errorf("ObjectHandle(%q).Update: %v", o, err)
+		}
+
+		writer := o.NewWriter(context.Background())
 		start := time.Now()
 		_, err = writer.Write([]byte(d))
 		if err != nil {
@@ -77,6 +86,15 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		log.Debugf("write to bucket took %d ns", latency.Nanoseconds())
 		w.WriteHeader(http.StatusCreated)
 	}
+}
+
+func cacheControl(cacheControl string) storage.ObjectAttrsToUpdate {
+	objectAttrsToUpdate := storage.ObjectAttrsToUpdate{
+		Metadata: map[string]string{
+			"Cache-Control": cacheControl,
+		},
+	}
+	return objectAttrsToUpdate
 }
 
 func closeStorageReader(reader *storage.Reader) {
