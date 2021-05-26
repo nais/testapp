@@ -18,6 +18,7 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 			log.Errorf("error creating storage client: %s", err)
 		}
 
+		start := time.Now()
 		reader, err := client.Bucket(bucketName).Object(bucketObjectName).NewReader(context.Background())
 		defer closeStorageReader(reader)
 
@@ -27,7 +28,6 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 			return
 		}
 
-		start := time.Now()
 		res, err := ioutil.ReadAll(reader)
 		if err != nil {
 			log.Errorf("unable to read from bucket: %s", err)
