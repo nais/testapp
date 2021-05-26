@@ -62,12 +62,6 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		defer client.Close()
 
 		o := client.Bucket(bucketName).Object(bucketObjectName)
-		objectAttrsToUpdate := cacheControl("no-cache")
-
-		if _, err := o.Update(ctx, objectAttrsToUpdate); err != nil {
-			log.Errorf("ObjectHandle(%q).Update: %v", o, err)
-		}
-
 		writer := o.NewWriter(context.Background())
 		start := time.Now()
 		_, err = writer.Write([]byte(d))
@@ -84,6 +78,13 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		}
 		latency := metrics.SetLatencyMetric(start, metrics.BucketWrite)
 		log.Debugf("write to bucket took %d ns", latency.Nanoseconds())
+
+		objectAttrsToUpdate := cacheControl("no-cache")
+
+		if _, err := o.Update(ctx, objectAttrsToUpdate); err != nil {
+			log.Errorf("ObjectHandle(%q).Update: %v", o, err)
+		}
+
 		w.WriteHeader(http.StatusCreated)
 	}
 }
