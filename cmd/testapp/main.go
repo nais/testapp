@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/nais/testapp/pkg/bigquery"
 	"github.com/nais/testapp/pkg/bucket"
 	"github.com/nais/testapp/pkg/database"
 	"github.com/nais/testapp/pkg/metrics"
@@ -35,6 +36,8 @@ var (
 	dbPassword                    string
 	dbHost                        string
 	dbName                        string
+	bigqueryName                  string
+	projectID                     string
 	debug                         bool
 )
 
@@ -51,6 +54,8 @@ func init() {
 	flag.StringVar(&bindAddr, "bind-address", ":8080", "ip:port where http requests are served")
 	flag.StringVar(&pingResponse, "ping-response", "pong\n", "what to respond when pinged")
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
+	flag.StringVar(&projectID, "projectid", os.Getenv("PROJECT_ID"), "projectid used with /{read,write}bigquery")
+	flag.StringVar(&bigqueryName, "bigquery-name", os.Getenv("BIGQUERY_NAME"), "name of bigquery dataset used with /{read,write}bigquery")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
 	flag.StringVar(&dbName, "db-name", defaultDbName, "database name")
@@ -189,6 +194,8 @@ func main() {
 	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
+	r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName))
+	r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName)).Methods(http.MethodPost)
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
