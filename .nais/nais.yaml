@@ -27,6 +27,8 @@ spec:
       cpu: {{resources.requests.cpu}}
       memory: {{resources.requests.memory}}
   env:
+    - name: BIGQUERY_NAME
+      value: mybqdataset
 {{#each envs}}
     - name: "{{name}}"
       value: "{{value}}"
