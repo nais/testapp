@@ -117,8 +117,10 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		log.Infof("Dataset-%v", dataset.DatasetID)
 		tableRef := dataset.Table(tableID)
 		log.Infof("Tableref-%v", tableRef)
-		if len(tableRef.TableID) <= 0 {
-			log.Errorf("tablename-%v", tableRef.TableID)
+		md, err := tableRef.Metadata(ctx)
+
+		if len(md.Name) <= 0 {
+			log.Errorf("tablename-%v", md.FullID)
 			tableRef, err = createBigQueryTable(ctx, dataset, tableID)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
