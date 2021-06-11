@@ -5,16 +5,34 @@ import (
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/iterator"
 	"net/http"
 	"time"
 )
 
-func ReadBigQueryHandler(projectID, datasetID string) func(w http.ResponseWriter, _ *http.Request) {
+
+// Item represents a row item.
+type Item struct {
+	Foo string
+	Bar string
+}
+
+const specificTimeWhichTimeLibParsesForFormattingPurposes = "2006-01-02T15:04:05Z07:00"
+
+func validateRow(row Item, currentTime time.Time) (bool, error) {
+	rowCreationTimestamp, err := time.Parse(specificTimeWhichTimeLibParsesForFormattingPurposes, row.Bar)
+	if err != nil {
+		log.Errorf("unable to parse timestamp in row '%v': %v", row, err)
+		return false, err
+	}
+
+	return row.Foo == "Hello, world!" && currentTime.After(rowCreationTimestamp), nil
+}
+
+func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
 
-		tableID := "dummyTable"
 		ctx := context.Background()
-
 		client, err := bigquery.NewClient(ctx, projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -25,19 +43,34 @@ func ReadBigQueryHandler(projectID, datasetID string) func(w http.ResponseWriter
 			// Ignore handling this error
 			_ = client.Close()
 		}(client)
-		dataset := client.Dataset(datasetID)
 
-		tableRef := dataset.Table(tableID)
-		metadata, err := tableRef.Metadata(ctx)
-		if err != nil {
-			log.Errorf("unable to read metadata from table inn dataset: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		tableRows := client.Dataset(datasetID).Table(tableID).Read(ctx)
+		currentTime := time.Now().UTC()
+		for {
+			var row Item
+			err := tableRows.Next(&row)
+			if err == iterator.Done {
+				break
+			} else if err != nil {
+				log.Errorf("error iterating through results: %v", err)
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			validRow, err := validateRow(row, currentTime)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			if validRow != true {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Infof("row was not considered valid: %v", row)
+				return
+			}
 		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(metadata.FullID))
-
 	}
 }
 
@@ -65,14 +98,6 @@ func createBigQueryTable(ctx context.Context, datasetHandler *bigquery.Dataset, 
 
 	return tableRef, nil
 }
-
-// Item represents a row item.
-type Item struct {
-	Foo string
-	Bar string
-}
-
-const specificTimeWhichTimeLibParsesForFormattingPurposes = "2006-01-02T15:04:05Z07:00"
 
 func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
@@ -103,11 +128,7 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		inserter := tableRef.Inserter()
 		items := []*Item{
 			{
-				Foo: "Hello",
-				Bar: fmt.Sprintf(time.Now().UTC().Format(specificTimeWhichTimeLibParsesForFormattingPurposes)),
-			},
-			{
-				Foo: ", world!",
+				Foo: "Hello, world!",
 				Bar: fmt.Sprintf(time.Now().UTC().Format(specificTimeWhichTimeLibParsesForFormattingPurposes)),
 			},
 		}

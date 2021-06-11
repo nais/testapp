@@ -196,7 +196,7 @@ func main() {
 	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
-	r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName))
+	r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
 	r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
 
 	if debug {
