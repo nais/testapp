@@ -37,6 +37,7 @@ var (
 	dbHost                        string
 	dbName                        string
 	bigqueryName                  string
+	bigqueryTableName             string
 	projectID                     string
 	debug                         bool
 )
@@ -56,6 +57,7 @@ func init() {
 	flag.StringVar(&bucketName, "bucket-name", os.Getenv("BUCKET_NAME"), "name of bucket used with /{read,write}bucket")
 	flag.StringVar(&projectID, "projectid", os.Getenv("GCP_TEAM_PROJECT_ID"), "projectid used with /{read,write}bigquery")
 	flag.StringVar(&bigqueryName, "bigqueryname", os.Getenv("BIGQUERY_NAME"), "name of bigquery dataset used with /{read,write}bigquery")
+	flag.StringVar(&bigqueryTableName, "bigquerytablename", os.Getenv("BIGQUERY_TABLE_NAME"), "name of bigquery dataset's table used with /{read,write}bigquery")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
 	flag.StringVar(&dbName, "db-name", defaultDbName, "database name")
@@ -195,7 +197,7 @@ func main() {
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
 	r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName))
-	r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName)).Methods(http.MethodPost)
+	r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
 
 	if debug {
 		log.SetLevel(log.DebugLevel)

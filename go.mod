@@ -1,7 +1,7 @@
 module github.com/nais/testapp
 
 require (
-	cloud.google.com/go/bigquery v1.0.1 // indirect
+	cloud.google.com/go/bigquery v1.0.1
 	cloud.google.com/go/storage v1.1.1
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
