@@ -116,7 +116,7 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		dataset := client.Dataset(datasetID)
 		log.Infof("Dataset-%v", dataset.DatasetID)
 		tableRef := dataset.Table(tableID)
-		log.Infof("Tableref-%v", tableRef)
+		log.Infof("Tableref-%v", tableRef.TableID)
 		md, err := tableRef.Metadata(ctx)
 
 		if len(md.Name) <= 0 {
