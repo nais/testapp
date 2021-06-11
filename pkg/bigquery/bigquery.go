@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 // Item represents a row item.
 type Item struct {
 	Foo string
@@ -74,12 +73,12 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 	}
 }
 
-func createBigQueryTable(ctx context.Context, datasetHandler *bigquery.Dataset, tableName string) (*bigquery.Table, error){
+func createBigQueryTable(ctx context.Context, datasetHandler *bigquery.Dataset, tableName string) (*bigquery.Table, error) {
 	tableID := "dummyTable"
 	if len(tableName) > 0 {
 		tableID = tableName
 	}
-
+	log.Infof("Try to create table %v", tableName)
 	sampleSchema := bigquery.Schema{
 		{Name: "id", Type: bigquery.StringFieldType},
 		{Name: "name", Type: bigquery.StringFieldType},
@@ -115,7 +114,9 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		}(client)
 
 		dataset := client.Dataset(datasetID)
+		log.Infof("Dataset-%v", dataset.DatasetID)
 		tableRef := dataset.Table(tableID)
+		log.Infof("Tableref-%v", tableRef)
 		if tableRef == nil {
 			tableRef, err = createBigQueryTable(ctx, dataset, tableID)
 			if err != nil {
