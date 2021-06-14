@@ -29,6 +29,8 @@ spec:
   env:
     - name: BIGQUERY_NAME
       value: mybqdataset
+    - name: BIGQUERY_TABLE_NAME
+      value: bigquerytableename
 {{#each envs}}
     - name: "{{name}}"
       value: "{{value}}"

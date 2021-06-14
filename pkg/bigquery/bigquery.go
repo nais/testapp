@@ -73,15 +73,12 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 	}
 }
 
-func createBigQueryTable(ctx context.Context, datasetHandler *bigquery.Dataset, tableName string) (*bigquery.Table, error) {
-	tableID := "dummyTable"
-	if len(tableName) > 0 {
-		tableID = tableName
-	}
-	log.Infof("Try to create table %v", tableName)
+func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
+
+	log.Infof("Create new table")
 	sampleSchema := bigquery.Schema{
-		{Name: "id", Type: bigquery.StringFieldType},
-		{Name: "name", Type: bigquery.StringFieldType},
+		{Name: "Foo", Type: bigquery.StringFieldType},
+		{Name: "Bar", Type: bigquery.StringFieldType},
 	}
 
 	metaData := &bigquery.TableMetadata{
@@ -89,13 +86,12 @@ func createBigQueryTable(ctx context.Context, datasetHandler *bigquery.Dataset, 
 		ExpirationTime: time.Now().AddDate(1, 0, 0), // Table will be automatically deleted in 1 year.
 	}
 
-	tableRef := datasetHandler.Table(tableID)
 	if err := tableRef.Create(ctx, metaData); err != nil {
 		log.Errorf("failed creating table, error was: %s", err)
-		return nil, err
+		return  err
 	}
 
-	return tableRef, nil
+	return nil
 }
 
 func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
@@ -114,21 +110,18 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		}(client)
 
 		dataset := client.Dataset(datasetID)
-		log.Infof("Dataset-%v", dataset.DatasetID)
 		tableRef := dataset.Table(tableID)
-		log.Infof("Tableref-%v", tableRef.TableID)
-		md, err := tableRef.Metadata(ctx)
 
-		if len(md.Name) <= 0 {
-			log.Errorf("tablename-%v", md.FullID)
-			tableRef, err = createBigQueryTable(ctx, dataset, tableID)
+		// Check if table exists
+		_, err = tableRef.Metadata(ctx)
+		if err != nil {
+			err = createBigQueryTable(ctx, tableRef)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
 		}
-
 		inserter := tableRef.Inserter()
 		items := []*Item{
 			{
@@ -138,10 +131,15 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		}
 
 		err = inserter.Put(ctx, items)
+
 		if err != nil {
+			log.Errorf("insert failed %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
+		log.Infof("Inserting rows")
+
 	}
 }
+
