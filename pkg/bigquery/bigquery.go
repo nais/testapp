@@ -18,16 +18,6 @@ type Item struct {
 
 const specificTimeWhichTimeLibParsesForFormattingPurposes = "2006-01-02T15:04:05Z07:00"
 
-func validateRow(row Item, currentTime time.Time) (bool, error) {
-	rowCreationTimestamp, err := time.Parse(specificTimeWhichTimeLibParsesForFormattingPurposes, row.Bar)
-	if err != nil {
-		log.Errorf("unable to parse timestamp in row '%v': %v", row, err)
-		return false, err
-	}
-
-	return row.Foo == "Hello, world!" && currentTime.After(rowCreationTimestamp), nil
-}
-
 func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
 
@@ -44,32 +34,20 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 		}(client)
 
 		tableRows := client.Dataset(datasetID).Table(tableID).Read(ctx)
-		currentTime := time.Now().UTC()
+		var row []bigquery.Value
 		for {
-			var row Item
 			err := tableRows.Next(&row)
 			if err == iterator.Done {
 				break
-			} else if err != nil {
-				log.Errorf("error iterating through results: %v", err)
-				w.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = w.Write([]byte(err.Error()))
-				return
 			}
-
-			validRow, err := validateRow(row, currentTime)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
-
-			if validRow != true {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Infof("row was not considered valid: %v", row)
-				return
-			}
+			log.Infof("Row: %v", row)
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -88,7 +66,7 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 
 	if err := tableRef.Create(ctx, metaData); err != nil {
 		log.Errorf("failed creating table, error was: %s", err)
-		return  err
+		return err
 	}
 
 	return nil
@@ -121,6 +99,21 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
+		} else {
+			// Recursively delete table
+			log.Infof("Delete bigquery table %v", tableRef.TableID)
+			err := tableRef.Delete(ctx)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+			err = createBigQueryTable(ctx, tableRef)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
 		}
 		inserter := tableRef.Inserter()
 		items := []*Item{
@@ -129,9 +122,7 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 				Bar: fmt.Sprintf(time.Now().UTC().Format(specificTimeWhichTimeLibParsesForFormattingPurposes)),
 			},
 		}
-
 		err = inserter.Put(ctx, items)
-
 		if err != nil {
 			log.Errorf("insert failed %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -139,7 +130,7 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			return
 		}
 		log.Infof("Inserting rows")
+		w.WriteHeader(http.StatusCreated)
 
 	}
 }
-
