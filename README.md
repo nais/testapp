@@ -16,6 +16,8 @@ simple go binary that exposes the following services
 * `/readbucket` (reads and outputs current bucket content)
 * `/writedb` (writes request payload to configured database (HTTP POST))
 * `/readdb` (reads and outputs current database content)
+* `/writebigquery` (create table in bigquery dataset and insert a row (HTTP POST))
+* `/readbigquery`(read current bigquery table content)
 
 ## binaries
 the docker container has the following binaries
@@ -33,6 +35,8 @@ the docker container has the following binaries
       --db-name string               database name (default "testapp")
       --db-password string           database password
       --db-user string               database username (default "testapp")
+      --bigqueryName                 bigquery dataset name (default "bigqueryname")
+	  --bigqueryTableName            bigquery table name (default "bigquerytablename")
       --graceful-shutdown-wait int   when receiving interrupt signal, it will wait this amount of seconds before shutting down server
       --ping-response string         what to respond when pinged (default "pong\n")
 
