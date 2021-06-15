@@ -5,18 +5,17 @@ import (
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
+	"io"
 	"net/http"
 	"time"
 )
 
 // Item represents a row item.
 type Item struct {
-	Foo string
-	Bar string
+	Message string
 }
-
-const specificTimeWhichTimeLibParsesForFormattingPurposes = "2006-01-02T15:04:05Z07:00"
 
 func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
@@ -34,7 +33,8 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 		}(client)
 
 		tableRows := client.Dataset(datasetID).Table(tableID).Read(ctx)
-		var row []bigquery.Value
+		var row Item
+		c := 0
 		for {
 			err := tableRows.Next(&row)
 			if err == iterator.Done {
@@ -45,9 +45,16 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
+			c += 1
 			log.Infof("Row: %v", row)
 		}
+		if c != 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprintf(w, "Test returned incorrect amount of data %v", c)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, row.Message)
 	}
 }
 
@@ -55,8 +62,7 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 
 	log.Infof("Create new table")
 	sampleSchema := bigquery.Schema{
-		{Name: "Foo", Type: bigquery.StringFieldType},
-		{Name: "Bar", Type: bigquery.StringFieldType},
+		{Name: "Message", Type: bigquery.StringFieldType},
 	}
 
 	metaData := &bigquery.TableMetadata{
@@ -73,7 +79,7 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 }
 
 func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 
 		ctx := context.Background()
 		client, err := bigquery.NewClient(ctx, projectID)
@@ -90,36 +96,33 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		dataset := client.Dataset(datasetID)
 		tableRef := dataset.Table(tableID)
 
-		// Check if table exists
-		_, err = tableRef.Metadata(ctx)
+		// Delete potentially existing table
+		log.Infof("Delete bigquery table %v", tableRef.TableID)
+		err = tableRef.Delete(ctx)
 		if err != nil {
-			err = createBigQueryTable(ctx, tableRef)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-		} else {
-			// Recursively delete table
-			log.Infof("Delete bigquery table %v", tableRef.TableID)
-			err := tableRef.Delete(ctx)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-			err = createBigQueryTable(ctx, tableRef)
-			if err != nil {
+			e, ok := err.(*googleapi.Error)
+			if !ok || e.Code != 404 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
 		}
+		err = createBigQueryTable(ctx, tableRef)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 		inserter := tableRef.Inserter()
+		b, err := io.ReadAll(req.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 		items := []*Item{
 			{
-				Foo: "Hello, world!",
-				Bar: fmt.Sprintf(time.Now().UTC().Format(specificTimeWhichTimeLibParsesForFormattingPurposes)),
+				Message: string(b),
 			},
 		}
 		err = inserter.Put(ctx, items)
