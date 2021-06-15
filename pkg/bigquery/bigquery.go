@@ -53,6 +53,7 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 			_, _ = fmt.Fprintf(w, "Test returned incorrect amount of data %v", c)
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprint(w, row.Message)
 	}
@@ -113,7 +114,7 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		inserter := tableRef.Inserter()
+
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -125,6 +126,9 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 				Message: string(b),
 			},
 		}
+
+		log.Infof("Inserting row: %v", items)
+		inserter := tableRef.Inserter()
 		err = inserter.Put(ctx, items)
 		if err != nil {
 			log.Errorf("insert failed %v", err.Error())
@@ -132,8 +136,8 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		log.Infof("Inserting rows")
-		w.WriteHeader(http.StatusCreated)
 
+		log.Infof("Finised with request: %s", string(b))
+		w.WriteHeader(http.StatusCreated)
 	}
 }
