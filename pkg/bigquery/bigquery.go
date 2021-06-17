@@ -1,15 +1,17 @@
 package bigquery
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"cloud.google.com/go/bigquery"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
-	"io"
-	"net/http"
-	"time"
 )
 
 // Item represents a row item.
@@ -19,7 +21,6 @@ type Item struct {
 
 func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, _ *http.Request) {
-
 		ctx := context.Background()
 		client, err := bigquery.NewClient(ctx, projectID)
 		if err != nil {
@@ -32,7 +33,8 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 			_ = client.Close()
 		}(client)
 
-		tableRows := client.Dataset(datasetID).Table(tableID).Read(ctx)
+		tableRef := client.Dataset(datasetID).Table(tableID)
+		tableRows := tableRef.Read(ctx)
 		var row Item
 		c := 0
 		for {
@@ -48,6 +50,28 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 			c += 1
 			log.Infof("Row: %v", row)
 		}
+
+		q := client.Query(`TRUNCATE TABLE ` + strings.ReplaceAll(tableRef.FullyQualifiedName(), ":", "."))
+		q.Priority = bigquery.InteractivePriority
+		job, err := q.Run(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		s, err := job.Wait(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		if s.Err() != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
 		if c != 1 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintf(w, "Test returned incorrect amount of data %v", c)
@@ -60,7 +84,6 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 }
 
 func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
-
 	log.Infof("Create new table")
 	sampleSchema := bigquery.Schema{
 		{Name: "Message", Type: bigquery.StringFieldType},
@@ -80,8 +103,26 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 }
 
 func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
-	return func(w http.ResponseWriter, req *http.Request) {
+	{
+		ctx := context.Background()
 
+		client, err := bigquery.NewClient(ctx, projectID)
+		if err != nil {
+			log.WithError(err).Println("couldn't create bigquery client")
+		} else {
+			dataset := client.Dataset(datasetID)
+			tableRef := dataset.Table(tableID)
+			err = createBigQueryTable(ctx, tableRef)
+			if err != nil {
+				e, ok := err.(*googleapi.Error)
+				if !ok || e.Code != 409 {
+					log.WithError(err).Println("couldn't create bigquery table")
+				}
+			}
+		}
+	}
+
+	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := context.Background()
 		client, err := bigquery.NewClient(ctx, projectID)
 		if err != nil {
@@ -94,44 +135,37 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			_ = client.Close()
 		}(client)
 
-		dataset := client.Dataset(datasetID)
-		tableRef := dataset.Table(tableID)
-
-		// Delete potentially existing table
-		log.Infof("Delete bigquery table %v", tableRef.TableID)
-		err = tableRef.Delete(ctx)
-		if err != nil {
-			e, ok := err.(*googleapi.Error)
-			if !ok || e.Code != 404 {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-		}
-		err = createBigQueryTable(ctx, tableRef)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		items := []*Item{
-			{
-				Message: string(b),
-			},
+		item := Item{
+			Message: string(b),
 		}
 
-		log.Infof("Inserting row: %v", items)
-		inserter := tableRef.Inserter()
-		err = inserter.Put(ctx, items)
+		log.Infof("Inserting row: %v", item)
+
+		dataset := client.Dataset(datasetID)
+		tableRef := dataset.Table(tableID)
+
+		q := client.Query("INSERT INTO `" + strings.ReplaceAll(tableRef.FullyQualifiedName(), ":", ".") + "` VALUES (\"" + item.Message + `")`)
+		q.Priority = bigquery.InteractivePriority
+		job, err := q.Run(ctx)
 		if err != nil {
-			log.Errorf("insert failed %v", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		s, err := job.Wait(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		if s.Err() != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
