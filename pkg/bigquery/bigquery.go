@@ -171,15 +171,24 @@ func CreateDatasetAndTable(projectID string, datasetID string, tableID string) e
 		return fmt.Errorf("couldn't create bigquery client in project-id '%v': %w", projectID, err)
 	}
 
-	dataset := client.Dataset(datasetID)
-	tableRef := dataset.Table(tableID)
-	err = createBigQueryTable(ctx, tableRef)
-	if err != nil {
-		e, ok := err.(*googleapi.Error)
-		if !ok || e.Code != 409 {
-			// Status code 409 indicates table and dataset combination already exists
-			return fmt.Errorf("couldn't create bigquery table '%v.%v.%v': %w", projectID, datasetID, tableID, err)
+	for tries := 0; tries < 10; tries++ {
+		tableRef := client.Dataset(datasetID).Table(tableID)
+		err = createBigQueryTable(ctx, tableRef)
+		if err != nil {
+			e, ok := err.(*googleapi.Error)
+			if ok && e.Code == 409 {
+				// Status code 409 indicates table and dataset combination already exists
+				break
+			}
+
+			time.Sleep(500 * time.Duration(tries+1) * time.Millisecond)
+			continue
 		}
+		break
+	}
+
+	if err != nil {
+		return fmt.Errorf("couldn't create bigquery table '%v.%v.%v': %w", projectID, datasetID, tableID, err)
 	}
 
 	return nil
