@@ -20,12 +20,14 @@ type Item struct {
 }
 
 func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		ctx := context.Background()
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx, cancel := context.WithTimeout(req.Context(), 10*time.Second)
+		defer cancel()
+
 		client, err := bigquery.NewClient(ctx, projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			_, _ = fmt.Fprint(w, err)
 			return
 		}
 		defer func(client *bigquery.Client) {
@@ -34,6 +36,13 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 		}(client)
 
 		tableRef := client.Dataset(datasetID).Table(tableID)
+		defer func() {
+			// We want this to happen no matter the value of c
+			if err := truncateDatabase(ctx, client, tableRef); err != nil {
+				log.Errorf("unable to truncate table '%v' after read: %v", tableRef.FullyQualifiedName(), err)
+			}
+		}()
+
 		tableRows := tableRef.Read(ctx)
 		var row Item
 		c := 0
@@ -44,32 +53,10 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 			}
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
+				_, _ = fmt.Fprint(w, err)
 				return
 			}
 			c += 1
-			log.Infof("Row: %v", row)
-		}
-
-		q := client.Query(`TRUNCATE TABLE ` + strings.ReplaceAll(tableRef.FullyQualifiedName(), ":", "."))
-		q.Priority = bigquery.InteractivePriority
-		job, err := q.Run(ctx)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-		s, err := job.Wait(ctx)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		if s.Err() != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
 		}
 
 		if c != 1 {
@@ -83,8 +70,27 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 	}
 }
 
+func truncateDatabase(ctx context.Context, client *bigquery.Client, tableRef *bigquery.Table) error {
+	q := client.Query(`TRUNCATE TABLE ` + strings.ReplaceAll(tableRef.FullyQualifiedName(), ":", "."))
+	q.Priority = bigquery.InteractivePriority
+	job, err := q.Run(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Await timout or job completion
+	s, err := job.Wait(ctx)
+	switch {
+	case err != nil:
+		return err
+	case s.Err() != nil:
+		return s.Err()
+	}
+
+	return nil
+}
+
 func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
-	log.Infof("Create new table")
 	sampleSchema := bigquery.Schema{
 		{Name: "Message", Type: bigquery.StringFieldType},
 	}
@@ -103,31 +109,12 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 }
 
 func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.ResponseWriter, _ *http.Request) {
-	{
-		ctx := context.Background()
-
-		client, err := bigquery.NewClient(ctx, projectID)
-		if err != nil {
-			log.WithError(err).Println("couldn't create bigquery client")
-		} else {
-			dataset := client.Dataset(datasetID)
-			tableRef := dataset.Table(tableID)
-			err = createBigQueryTable(ctx, tableRef)
-			if err != nil {
-				e, ok := err.(*googleapi.Error)
-				if !ok || e.Code != 409 {
-					log.WithError(err).Println("couldn't create bigquery table")
-				}
-			}
-		}
-	}
-
 	return func(w http.ResponseWriter, req *http.Request) {
-		ctx := context.Background()
+		ctx := req.Context()
 		client, err := bigquery.NewClient(ctx, projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			_, _ = fmt.Fprint(w, err)
 			return
 		}
 		defer func(client *bigquery.Client) {
@@ -135,43 +122,65 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			_ = client.Close()
 		}(client)
 
+		// Get input from POST request body
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			_, _ = fmt.Fprint(w, err)
 			return
 		}
+
+		// Prepare query
 		item := Item{
 			Message: string(b),
 		}
-
-		log.Infof("Inserting row: %v", item)
-
-		dataset := client.Dataset(datasetID)
-		tableRef := dataset.Table(tableID)
-
+		tableRef := client.Dataset(datasetID).Table(tableID)
 		q := client.Query("INSERT INTO `" + strings.ReplaceAll(tableRef.FullyQualifiedName(), ":", ".") + "` VALUES (\"" + item.Message + `")`)
 		q.Priority = bigquery.InteractivePriority
+
+		// Execute query
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
 		job, err := q.Run(ctx)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			_, _ = fmt.Fprint(w, err)
 			return
 		}
+
+		// Await timout or job completion
 		s, err := job.Wait(ctx)
-		if err != nil {
+		if err != nil || s.Err() != nil {
+			if err == nil {
+				err = s.Err()
+			}
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			_, _ = fmt.Fprint(w, err)
 			return
 		}
 
-		if s.Err() != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		log.Infof("Finised with request: %s", string(b))
 		w.WriteHeader(http.StatusCreated)
 	}
+}
+
+func CreateDatasetAndTable(projectID string, datasetID string, tableID string) error {
+	ctx := context.Background()
+
+	client, err := bigquery.NewClient(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("couldn't create bigquery client in project-id '%v': %w", projectID, err)
+	}
+
+	dataset := client.Dataset(datasetID)
+	tableRef := dataset.Table(tableID)
+	err = createBigQueryTable(ctx, tableRef)
+	if err != nil {
+		e, ok := err.(*googleapi.Error)
+		if !ok || e.Code != 409 {
+			// Status code 409 indicates table and dataset combination already exists
+			return fmt.Errorf("couldn't create bigquery table '%v.%v.%v': %w", projectID, datasetID, tableID, err)
+		}
+	}
+
+	return nil
 }

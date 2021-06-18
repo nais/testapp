@@ -192,12 +192,23 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
+	// Bucket set-ups and endpoints
 	r.HandleFunc("/readbucket", bucket.ReadBucketHandler(bucketName, bucketObjectName))
 	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
+
+	// DB set-ups and endpoints
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
-	r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
-	r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
+
+	// Bigquery set-ups and endpoints
+	err := bigquery.CreateDatasetAndTable(projectID, bigqueryName, bigqueryTableName)
+	switch {
+	case err != nil:
+		log.Errorf("Unable to create bigquery dataset and table, all tests will return HTTP STATUS 404: %v", err)
+	default:
+		r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
+		r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
+	}
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
