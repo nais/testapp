@@ -24,6 +24,7 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 
 		if err != nil {
 			log.Errorf("unable to create reader: %s", err)
+			metrics.BucketReadFailed.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -31,6 +32,7 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 		res, err := ioutil.ReadAll(reader)
 		if err != nil {
 			log.Errorf("unable to read from bucket: %s", err)
+			metrics.BucketReadFailed.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -58,6 +60,7 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		ctx := context.Background()
 		client, err := storage.NewClient(ctx)
 		if err != nil {
+			metrics.BucketWriteFailed.Inc()
 			log.Errorf("error creating storage client: %s", err)
 		}
 		defer client.Close()
@@ -68,6 +71,7 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 		_, err = writer.Write([]byte(d))
 		if err != nil {
 			log.Errorf("unable to write to bucket: %s", err)
+			metrics.BucketWriteFailed.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
