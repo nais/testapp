@@ -63,13 +63,15 @@ func WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(http.R
 		start := time.Now()
 		_, err = db.Exec(stmt, time.Now().UnixNano(), d)
 		if err != nil {
+			metrics.DbInsertFailed.Inc()
 			log.Errorf("failed inserting to table, error was: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		latency := metrics.SetLatencyMetric(start, metrics.DbInsert)
-		log.Debugf("write to database took %d ns", latency.Nanoseconds())
+		latency := float64(time.Since(start).Nanoseconds())
+		metrics.DbInsert.Set(latency)
+		log.Debugf("write to database took %d ns", latency)
 
 		w.WriteHeader(http.StatusCreated)
 	}
@@ -95,12 +97,14 @@ func ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(w http.
 		start := time.Now()
 		rows, err := db.Query("SELECT data FROM test")
 		if err != nil {
+			metrics.DbReadFailed.Inc()
 			log.Errorf("could not get rows: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		latency := metrics.SetLatencyMetric(start, metrics.DbRead)
+		latency := float64(time.Since(start).Nanoseconds())
+		metrics.DbRead.Set(latency)
 		log.Debugf("read from database took %d ns", latency)
 		defer rows.Close()
 

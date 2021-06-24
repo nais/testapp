@@ -36,9 +36,10 @@ func ReadBucketHandler(bucketName, bucketObjectName string) func(w http.Response
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		latency := metrics.SetLatencyMetricHist(start, metrics.BucketReadHist)
-		_ = metrics.SetLatencyMetric(start, metrics.BucketRead)
-		log.Debugf("read from bucket took %d ns", latency.Nanoseconds())
+		latency := float64(time.Since(start).Nanoseconds())
+		metrics.BucketReadHist.Observe(latency)
+		metrics.BucketRead.Set(latency)
+		log.Debugf("read from bucket took %d ns", latency)
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(res)
@@ -81,9 +82,10 @@ func WriteBucketHandler(bucketName, bucketObjectName string) func(w http.Respons
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		latency := metrics.SetLatencyMetricHist(start, metrics.BucketWriteHist)
-		_ = metrics.SetLatencyMetric(start, metrics.BucketWrite)
-		log.Debugf("write to bucket took %d ns", latency.Nanoseconds())
+		latency := float64(time.Since(start).Nanoseconds())
+		metrics.BucketWriteHist.Observe(latency)
+		metrics.BucketWrite.Set(latency)
+		log.Debugf("write to bucket took %d ns", latency)
 
 		objectAttrsToUpdate := cacheControl("no-store")
 
