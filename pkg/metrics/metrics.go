@@ -39,19 +39,19 @@ var (
 	DeployTimestamp     = gauge("deploy_timestamp", "Timestamp when the deploy of this application was triggered in the pipeline")
 	StartTimestamp      = gauge("start_timestamp", "Start time of the application")
 	BucketWrite         = gauge("bucket_write_latency", "The time it takes to write to the bucket in nanoseconds")
-	writeHistBuckets    = []float64{float64(40 * time.Millisecond), float64(70 * time.Millisecond), float64(130 * time.Millisecond), float64(250 * time.Millisecond), float64(490 * time.Millisecond)}
+	writeHistBuckets    = []float64{float64(41 * time.Millisecond), float64(82 * time.Millisecond), float64(164 * time.Millisecond), float64(328 * time.Millisecond)}
 	BucketWriteHist     = hist("bucket_write_latency_hist", "The time it takes to write to the bucket in nanoseconds", writeHistBuckets)
 	BucketWriteFailed   = gauge("bucket_write_requests_failed", "The total of failed bucket writes.")
 	BucketRead          = gauge("bucket_read_latency", "The time it takes to read to the bucket in nanoseconds")
-	readHistBuckets     = []float64{float64(30 * time.Millisecond), float64(60 * time.Millisecond), float64(120 * time.Millisecond), float64(240 * time.Millisecond), float64(480 * time.Millisecond)}
+	readHistBuckets     = []float64{float64(30 * time.Millisecond), float64(60 * time.Millisecond), float64(120 * time.Millisecond), float64(240 * time.Millisecond)}
 	BucketReadHist      = hist("bucket_read_latency_hist", "The time it takes to read to the bucket in nanoseconds", readHistBuckets)
 	BucketReadFailed    = gauge("bucket_read_requests_failed", "The total of failed bucket reads.")
 	DbInsert            = gauge("db_insert_latency", "The time it takes to insert to table")
-	dbInsertHistBuckets = []float64{float64(30 * time.Millisecond), float64(60 * time.Millisecond), float64(120 * time.Millisecond), float64(240 * time.Millisecond), float64(480 * time.Millisecond)}
+	dbInsertHistBuckets = []float64{float64(41 * time.Millisecond), float64(82 * time.Millisecond), float64(164 * time.Millisecond), float64(328 * time.Millisecond)}
 	DbInsertHist        = hist("db_insert_latency_hist", "The time it takes to insert to table", dbInsertHistBuckets)
 	DbInsertFailed      = gauge("db_insert_failed", "The total of failed db inserts.")
 	DbRead              = gauge("db_read_latency", "The time it takes to read from table")
-	dbReadHistBuckets   = []float64{float64(30 * time.Millisecond), float64(60 * time.Millisecond), float64(120 * time.Millisecond), float64(240 * time.Millisecond), float64(480 * time.Millisecond)}
+	dbReadHistBuckets   = []float64{float64(20 * time.Millisecond), float64(40 * time.Millisecond), float64(80 * time.Millisecond), float64(160 * time.Millisecond)}
 	DbReadHist          = hist("db_read_latency_hist", "The time it takes to read from table", dbReadHistBuckets)
 	DbReadFailed        = gauge("db_read_failed", "The total of failed db reads.")
 )
