@@ -201,13 +201,17 @@ func main() {
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
 
 	// Bigquery set-ups and endpoints
-	err := bigquery.CreateDatasetAndTable(projectID, bigqueryName, bigqueryTableName)
-	switch {
-	case err != nil:
-		log.Errorf("Unable to create bigquery dataset and table, all tests will return HTTP STATUS 404: %v", err)
-	default:
-		r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
-		r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
+	if bigqueryName != "" && bigqueryTableName != "" {
+		// Use input parameters as feature toggle for bigquery
+		//  since testrig will crash apparently
+		err := bigquery.CreateDatasetAndTable(projectID, bigqueryName, bigqueryTableName)
+		switch {
+		case err != nil:
+			log.Errorf("Unable to create bigquery dataset and table, all tests will return HTTP STATUS 404: %v", err)
+		default:
+			r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
+			r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
+		}
 	}
 
 	if debug {
