@@ -71,6 +71,7 @@ func WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(http.R
 		}
 		latency := float64(time.Since(start).Nanoseconds())
 		metrics.DbInsert.Set(latency)
+		metrics.DbInsertHist.Observe(latency)
 		log.Debugf("write to database took %d ns", latency)
 
 		w.WriteHeader(http.StatusCreated)
@@ -104,6 +105,7 @@ func ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(w http.
 			return
 		}
 		latency := float64(time.Since(start).Nanoseconds())
+		metrics.DbReadHist.Observe(latency)
 		metrics.DbRead.Set(latency)
 		log.Debugf("read from database took %d ns", latency)
 		defer rows.Close()
