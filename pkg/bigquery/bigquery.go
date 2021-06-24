@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/nais/testapp/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
@@ -42,7 +43,7 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 				log.Errorf("unable to truncate table '%v' after read: %v", tableRef.FullyQualifiedName(), err)
 			}
 		}()
-
+		start := time.Now()
 		tableRows := tableRef.Read(ctx)
 		var row Item
 		c := 0
@@ -52,14 +53,20 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 				break
 			}
 			if err != nil {
+				metrics.BqReadFailed.Inc()
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = fmt.Fprint(w, err)
 				return
 			}
 			c += 1
 		}
+		latency := float64(time.Since(start))
+		metrics.BqRead.Set(latency)
+		metrics.BqReadHist.Observe(latency)
+		log.Debugf("read from big query took %d ns", latency)
 
 		if c != 1 {
+			metrics.BqReadFailed.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintf(w, "Test returned incorrect amount of data %v", c)
 			return
@@ -141,8 +148,10 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 		// Execute query
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
+		start := time.Now()
 		job, err := q.Run(ctx)
 		if err != nil {
+			metrics.BqInsert.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprint(w, err)
 			return
@@ -154,11 +163,15 @@ func WriteBigQueryHandler(projectID, datasetID, tableID string) func(w http.Resp
 			if err == nil {
 				err = s.Err()
 			}
+			metrics.BqInsertFailed.Inc()
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprint(w, err)
 			return
 		}
-
+		latency := float64(time.Since(start))
+		metrics.BqInsert.Set(latency)
+		metrics.BqInsertHist.Observe(latency)
+		log.Debugf("write to big query took %d ns", latency)
 		w.WriteHeader(http.StatusCreated)
 	}
 }
