@@ -28,7 +28,7 @@ func hist(name, help string, buckets []float64) prometheus.Histogram {
 		Subsystem: subsystem,
 		Name:      name,
 		Help:      help,
-		Buckets:   []float64{float64(30 * time.Millisecond), float64(60 * time.Millisecond), float64(120 * time.Millisecond), float64(240 * time.Millisecond), float64(480 * time.Millisecond)},
+		Buckets:   buckets,
 	})
 }
 
