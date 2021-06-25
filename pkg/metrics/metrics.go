@@ -56,11 +56,11 @@ var (
 	DbReadFailed        = gauge("db_read_failed", "The total of failed db reads.")
 
 	BqInsert            = gauge("bq_insert_latency", "The time it takes to insert to table")
-	bqInsertHistBuckets = []float64{float64(41 * time.Millisecond), float64(82 * time.Millisecond), float64(164 * time.Millisecond), float64(328 * time.Millisecond)}
+	bqInsertHistBuckets = []float64{float64(2000 * time.Millisecond), float64(4000 * time.Millisecond), float64(8000 * time.Millisecond)}
 	BqInsertHist        = hist("bq_insert_latency_hist", "The time it takes to insert to table", bqInsertHistBuckets)
 	BqInsertFailed      = gauge("bq_insert_failed", "The total of failed db inserts.")
 	BqRead              = gauge("bq_read_latency", "The time it takes to read from table")
-	bqReadHistBuckets   = []float64{float64(20 * time.Millisecond), float64(40 * time.Millisecond), float64(80 * time.Millisecond), float64(160 * time.Millisecond)}
+	bqReadHistBuckets   = []float64{float64(500 * time.Millisecond), float64(1000 * time.Millisecond), float64(2000 * time.Millisecond)}
 	BqReadHist          = hist("bq_read_latency_hist", "The time it takes to read from table", bqReadHistBuckets)
 	BqReadFailed        = gauge("dbq_read_failed", "The total of failed db reads.")
 )
