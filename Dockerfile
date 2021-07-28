@@ -1,3 +1,8 @@
+FROM docker.io/curlimages/curl:latest as linkerd
+ARG LINKERD_AWAIT_VERSION=v0.2.3
+RUN curl -sSLo /tmp/linkerd-await https://github.com/linkerd/linkerd-await/releases/download/release%2F${LINKERD_AWAIT_VERSION}/linkerd-await-${LINKERD_AWAIT_VERSION}-amd64 && \
+    chmod 755 /tmp/linkerd-await
+
 FROM golang:1.16-alpine as builder
 RUN apk add --no-cache git make
 ENV GOOS=linux
@@ -17,4 +22,6 @@ RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd nmap s
 WORKDIR /app
 COPY --from=builder /src/bin/testapp /app/testapp
 COPY --from=builder /go/bin/hey /usr/bin/hey
+COPY --from=linkerd /tmp/linkerd-await /linkerd-await
+ENTRYPOINT ["/linkerd-await", "--shutdown", "--"]
 CMD ["/app/testapp"]
