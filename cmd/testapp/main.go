@@ -40,6 +40,9 @@ var (
 	bigqueryTableName             string
 	projectID                     string
 	debug                         bool
+	rgwAddress					  string
+	rgwAccessKey				  string
+	rgwSecretKey				  string
 )
 
 var (
@@ -59,6 +62,9 @@ func init() {
 	flag.StringVar(&bigqueryName, "bigqueryname", os.Getenv("BIGQUERY_NAME"), "name of bigquery dataset used with /{read,write}bigquery")
 	flag.StringVar(&bigqueryTableName, "bigquerytablename", os.Getenv("BIGQUERY_TABLE_NAME"), "name of bigquery dataset's table used with /{read,write}bigquery")
 	flag.StringVar(&bucketObjectName, "bucket-object-name", "test", "name of bucket object used with /{read,write}bucket")
+	flag.StringVar(&rgwAddress, "rgw-address", os.Getenv("RGW_ADDRESS"), "Ceph RGW objectstore address")
+	flag.StringVar(&rgwAccessKey, "rgw-access-key", os.Getenv("RGW_ACCESS_KEY"), "Ceph RGW objectstore access key")
+	flag.StringVar(&rgwSecretKey, "rgw-secret-key", os.Getenv("RGW_SECRET_KEY"), "Ceph RGW objectstore secret key")
 	flag.StringVar(&connectURL, "connect-url", "https://google.com", "URL to connect to with /connect")
 	flag.StringVar(&dbName, "db-name", defaultDbName, "database name")
 	flag.StringVar(&dbUser, "db-user", defaultDbUsername, "database username")
@@ -196,6 +202,13 @@ func main() {
 	r.HandleFunc("/readbucket", bucket.ReadBucketHandler(bucketName, bucketObjectName))
 	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
 
+	// Ceph bucket set-ups and endpoints
+	if rgwAddress != "" && rgwAccessKey != "" && rgwSecretKey != "" {
+		bucket.Ceph.CephInit(rgwAddress, bucketName, "us-east-1", rgwAccessKey, rgwSecretKey)
+		r.HandleFunc("/readrgwbucket", bucket.Ceph.ReadBucketHandler(bucketObjectName))
+		r.HandleFunc("/writergwbucket", bucket.Ceph.WriteBucketHandler(bucketObjectName)).Methods(http.MethodPost)
+	}
+
 	// DB set-ups and endpoints
 	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
 	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
@@ -213,6 +226,8 @@ func main() {
 			r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
 		}
 	}
+
+
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
