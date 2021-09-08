@@ -40,9 +40,9 @@ var (
 	bigqueryTableName             string
 	projectID                     string
 	debug                         bool
-	rgwAddress					  string
-	rgwAccessKey				  string
-	rgwSecretKey				  string
+	rgwAddress                    string
+	rgwAccessKey                  string
+	rgwSecretKey                  string
 )
 
 var (
@@ -147,6 +147,15 @@ func main() {
 		_, _ = fmt.Fprint(w, os.Environ())
 	})
 
+	r.HandleFunc("/logevent", func(w http.ResponseWriter, r *http.Request) {
+		fields := make(map[string]interface{})
+		for key, value := range r.URL.Query() {
+			fields[key] = value[0]
+		}
+		log.WithField("logtype", "event").WithFields(fields).Info("this is a event log statement")
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.HandleFunc("/log", func(w http.ResponseWriter, _ *http.Request) {
 		log.Info("this is a log statement from testapp")
 		w.WriteHeader(http.StatusOK)
@@ -226,8 +235,6 @@ func main() {
 			r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
 		}
 	}
-
-
 
 	if debug {
 		log.SetLevel(log.DebugLevel)

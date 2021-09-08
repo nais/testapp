@@ -18,7 +18,7 @@ import (
 type CephConfig struct {
 	host       string `ceph host`
 	bucketName string `bucketName`
-	pathStyle   bool  `ceph url style, true means you can use host directly,  
+	pathStyle  bool   `ceph url style, true means you can use host directly,  
 	false means bucketName.doname will be used`
 	accessKey string // `aws s3 aceessKey`
 	secretKey string // `aws s3 secretKey`
@@ -115,10 +115,10 @@ func (c *CephConfig) WriteBucketHandler(key string) func(http.ResponseWriter, *h
 		start := time.Now()
 
 		_, err = s3Service.PutObject(&s3.PutObjectInput{
-				Bucket: aws.String(c.bucketName),
-				Key:    aws.String(key),
-				Body:   bytes.NewReader(body),
-			})
+			Bucket: aws.String(c.bucketName),
+			Key:    aws.String(key),
+			Body:   bytes.NewReader(body),
+		})
 
 		if err != nil {
 			log.Errorf("could not write to bucket %s: %v", c.bucketName, err)
@@ -139,11 +139,11 @@ func (c *CephConfig) WriteBucketHandler(key string) func(http.ResponseWriter, *h
 func (c *CephConfig) createServiceClient() (*s3.S3, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
-			Credentials:                       credentials.NewCredentials(&CephProvider{}),
-			Endpoint:                          &c.host,
-			Region:                            &c.region,
-			DisableSSL:                        aws.Bool(true),
-			S3ForcePathStyle:                  &c.pathStyle,
+			Credentials:      credentials.NewCredentials(&CephProvider{}),
+			Endpoint:         &c.host,
+			Region:           &c.region,
+			DisableSSL:       aws.Bool(true),
+			S3ForcePathStyle: &c.pathStyle,
 		}}))
 
 	return s3.New(sess), nil

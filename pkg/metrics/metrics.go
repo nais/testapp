@@ -50,24 +50,24 @@ var (
 		float64(30 * time.Millisecond), float64(40 * time.Millisecond), float64(50 * time.Millisecond),
 		float64(60 * time.Millisecond), float64(70 * time.Millisecond), float64(80 * time.Millisecond),
 		float64(90 * time.Millisecond), float64(100 * time.Millisecond)}
-	BucketReadHist      = hist("bucket_read_latency_hist", "The time it takes to read to the bucket in nanoseconds", readHistBuckets)
-	BucketReadFailed    = gauge("bucket_read_requests_failed", "The total of failed bucket reads.")
-	RgwWrite      = gauge("rgw_write_latency", "The time it takes to write to the ceph bucket in nanoseconds")
-	writeHistRgw = []float64{float64(10 * time.Millisecond), float64(20 * time.Millisecond),
+	BucketReadHist   = hist("bucket_read_latency_hist", "The time it takes to read to the bucket in nanoseconds", readHistBuckets)
+	BucketReadFailed = gauge("bucket_read_requests_failed", "The total of failed bucket reads.")
+	RgwWrite         = gauge("rgw_write_latency", "The time it takes to write to the ceph bucket in nanoseconds")
+	writeHistRgw     = []float64{float64(10 * time.Millisecond), float64(20 * time.Millisecond),
 		float64(30 * time.Millisecond), float64(40 * time.Millisecond), float64(50 * time.Millisecond),
 		float64(60 * time.Millisecond), float64(70 * time.Millisecond), float64(80 * time.Millisecond),
 		float64(90 * time.Millisecond), float64(100 * time.Millisecond)}
-	RgwWriteHist   = hist("rgw_write_latency_hist", "The time it takes to write to the ceph bucket in nanoseconds",
+	RgwWriteHist = hist("rgw_write_latency_hist", "The time it takes to write to the ceph bucket in nanoseconds",
 		writeHistRgw)
 	RgwWriteFailed = gauge("rgw_write_requests_failed", "The total of failed ceph bucket writes.")
 	RgwRead        = gauge("rgw_read_latency", "The time it takes to read to the ceph bucket in nanoseconds")
-	readHistRgw   = []float64{float64(10 * time.Millisecond), float64(20 * time.Millisecond),
+	readHistRgw    = []float64{float64(10 * time.Millisecond), float64(20 * time.Millisecond),
 		float64(30 * time.Millisecond), float64(40 * time.Millisecond), float64(50 * time.Millisecond),
 		float64(60 * time.Millisecond), float64(70 * time.Millisecond), float64(80 * time.Millisecond),
 		float64(90 * time.Millisecond), float64(100 * time.Millisecond)}
-	RgwReadHist      = hist("rgw_read_latency_hist", "The time it takes to read to the ceph bucket in nanoseconds",
+	RgwReadHist = hist("rgw_read_latency_hist", "The time it takes to read to the ceph bucket in nanoseconds",
 		readHistRgw)
-	RgwReadFailed    = gauge("rgw_read_requests_failed", "The total of failed ceph bucket reads.")
+	RgwReadFailed       = gauge("rgw_read_requests_failed", "The total of failed ceph bucket reads.")
 	DbInsert            = gauge("db_insert_latency", "The time it takes to insert to table")
 	dbInsertHistBuckets = []float64{float64(5 * time.Millisecond), float64(10 * time.Millisecond),
 		float64(15 * time.Millisecond), float64(20 * time.Millisecond), float64(25 * time.Millisecond),
