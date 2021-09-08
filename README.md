@@ -12,6 +12,7 @@ simple go binary that exposes the following services
 * `/connect` (performs a HTTP GET to the URL configured in `$CONNECT_URL` and prints the result. Ignores certs)
 * `/log` (logs "this is a log statement" with level `info`)
 * `/logerror` (logs "this is a error log statement" with level `error`)
+* `/logevent` (logs "this is a event log statement" with `logtype` set to `event`. Query parameters will be added as fields)
 * `/writebucket` (writes request payload to configured bucket (HTTP POST))
 * `/readbucket` (reads and outputs current bucket content)
 * `/writedb` (writes request payload to configured database (HTTP POST))
