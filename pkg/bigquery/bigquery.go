@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/nais/testapp/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
+
+	"github.com/nais/testapp/pkg/metrics"
 )
 
 // Item represents a row item.
@@ -39,6 +40,8 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 		tableRef := client.Dataset(datasetID).Table(tableID)
 		defer func() {
 			// We want this to happen no matter the value of c
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+			defer cancel()
 			if err := truncateDatabase(ctx, client, tableRef); err != nil {
 				log.Errorf("unable to truncate table '%v' after read: %v", tableRef.FullyQualifiedName(), err)
 			}
