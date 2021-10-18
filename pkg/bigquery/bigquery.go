@@ -40,7 +40,7 @@ func ReadBigQueryHandler(projectID, datasetID, tableID string) func(w http.Respo
 		tableRef := client.Dataset(datasetID).Table(tableID)
 		defer func() {
 			// We want this to happen no matter the value of c
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 			if err := truncateDatabase(ctx, client, tableRef); err != nil {
 				log.Errorf("unable to truncate table '%v' after read: %v", tableRef.FullyQualifiedName(), err)
