@@ -12,6 +12,7 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/nais/testapp/pkg/metrics"
+	"github.com/nais/testapp/pkg/util"
 )
 
 // Item represents a row item.
@@ -140,21 +141,20 @@ func (bq *BigQuery) truncate(ctx context.Context) {
 }
 
 func (bq *BigQuery) Init(ctx context.Context) error {
-	var err error
-	for tries := 0; tries < 10; tries++ {
-		err = createBigQueryTable(ctx, bq.table)
-		if err != nil {
-			e, ok := err.(*googleapi.Error)
-			if ok && e.Code == 409 {
-				// Status code 409 indicates table and dataset combination already exists
-				return nil
-			}
-
-			time.Sleep(500 * time.Duration(tries+1) * time.Millisecond)
-			continue
+	errorOK := func(err error) bool {
+		e, ok := err.(*googleapi.Error)
+		if ok && e.Code == 409 {
+			// Status code 409 indicates table and dataset combination already exists
+			return true
 		}
-		break
+		return false
 	}
+
+	err := util.Retry(
+		func() error { return createBigQueryTable(ctx, bq.table) },
+		errorOK,
+		10,
+	)
 
 	if err != nil {
 		return fmt.Errorf("couldn't create bigquery table '%s': %w", bq.table.FullyQualifiedName(), err)

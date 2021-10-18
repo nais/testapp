@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nais/testapp/pkg/metrics"
+	"github.com/nais/testapp/pkg/util"
 )
 
 type Database struct {
@@ -53,8 +54,14 @@ func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, erro
 
 //goland:noinspection SqlNoDataSourceInspection
 func (db *Database) Init(ctx context.Context) error {
-	stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
-	_, err := db.client.ExecContext(ctx, stmt)
+	err := util.Retry(func() error {
+		stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
+		_, err := db.client.ExecContext(ctx, stmt)
+		return err
+	}, func(err error) bool {
+		return false
+	}, 10)
+
 	if err != nil {
 		return fmt.Errorf("failed creating table, error was: %s", err)
 	}
