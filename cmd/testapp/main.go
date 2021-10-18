@@ -291,7 +291,7 @@ func main() {
 func setupTestHandler(router *mux.Router, test testable.Testable) {
 	log.Infof("setting up %s test handler", test.Name())
 
-	path := fmt.Sprintf("%s/test", test.Name())
+	path := fmt.Sprintf("/%s/test", test.Name())
 	router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		expected := fmt.Sprintf("%x", 9999+rand.Intn(999999))[:4]
 		result, err := test.Test(r.Context(), expected)
