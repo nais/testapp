@@ -2,14 +2,15 @@ package bucket
 
 import (
 	"bytes"
-	"io/ioutil"
-	"net/http"
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/nais/testapp/pkg/metrics"
 
 	log "github.com/sirupsen/logrus"
@@ -26,125 +27,119 @@ type CephConfig struct {
 	blockSize int64  `blockSize`
 }
 
-var Ceph CephConfig
+type Ceph struct {
+	client     *s3.S3
+	objectName string
+	config     *CephConfig
+}
 
-type CephProvider struct{}
+func (c *Ceph) Name() string {
+	return "ceph"
+}
 
-func (c *CephProvider) Retrieve() (credentials.Value, error) {
-	return credentials.Value{
-		AccessKeyID:     Ceph.accessKey,
-		SecretAccessKey: Ceph.secretKey,
+func NewCephBucketTest(host, bucket, region, accessKey, secretKey, objectName string) (*Ceph, error) {
+	config := &CephConfig{
+		host:       host,
+		bucketName: bucket,
+		accessKey:  accessKey,
+		secretKey:  secretKey,
+		region:     region,
+		pathStyle:  true,
+		blockSize:  8 * 1024 * 1024,
+	}
+
+	return &Ceph{
+		client:     createServiceClient(config),
+		objectName: objectName,
+		config:     config,
 	}, nil
 }
 
-func (c *CephProvider) IsExpired() bool { return false }
+func (c *Ceph) Retrieve() (credentials.Value, error) {
+	return credentials.Value{
+		AccessKeyID:     c.config.accessKey,
+		SecretAccessKey: c.config.secretKey,
+	}, nil
+}
 
-func (c *CephConfig) CephInit(host, bucket, region, accessKey, secretKey string) error {
-	c.host = host
-	c.bucketName = bucket
-	c.accessKey = accessKey
-	c.secretKey = secretKey
-	c.region = region
-	c.pathStyle = true
-	c.blockSize = 8 * 1024 * 1024
+func (c *Ceph) IsExpired() bool { return false }
 
+func (c *Ceph) Test(ctx context.Context, data string) (string, error) {
+	err := c.write(data)
+	if err != nil {
+		return "", err
+	}
+
+	return c.read()
+}
+
+func (c *Ceph) Init(ctx context.Context) error {
 	return nil
 }
 
-func (c *CephConfig) ReadBucketHandler(key string) func(w http.ResponseWriter, _ *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		s3Service, err := c.createServiceClient()
-		if err != nil {
-			log.Errorf("error creating storage client: %v", err)
-			metrics.BucketReadFailed.Inc()
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		start := time.Now()
-		object, err := s3Service.GetObject(
-			&s3.GetObjectInput{
-				Bucket: aws.String(c.bucketName),
-				Key:    aws.String(key),
-			})
-
-		if err != nil {
-			log.Errorf("unable to read from bucket: %s", err)
-			metrics.BucketReadFailed.Inc()
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		buf := new(bytes.Buffer)
-		_, err = buf.ReadFrom(object.Body)
-		if err != nil {
-			log.Errorf("unable to read object body: %s", err)
-			metrics.BucketReadFailed.Inc()
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		latency := float64(time.Since(start).Nanoseconds())
-		metrics.RgwReadHist.Observe(latency)
-		metrics.RgwRead.Set(latency)
-		log.Debugf("read from bucket took %d ns", latency)
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(buf.Bytes())
-	}
+func (c *Ceph) Cleanup() {
 }
 
-func (c *CephConfig) WriteBucketHandler(key string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
-		if len(string(body)) == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("cannot be empty"))
-			return
-		}
-		defer r.Body.Close()
+func (c *Ceph) read() (string, error) {
+	start := time.Now()
 
-		s3Service, err := c.createServiceClient()
-		if err != nil {
-			log.Errorf("error creating storage client: %v", err)
-			metrics.RgwWriteFailed.Inc()
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		start := time.Now()
-
-		_, err = s3Service.PutObject(&s3.PutObjectInput{
-			Bucket: aws.String(c.bucketName),
-			Key:    aws.String(key),
-			Body:   bytes.NewReader(body),
+	object, err := c.client.GetObject(
+		&s3.GetObjectInput{
+			Bucket: aws.String(c.config.bucketName),
+			Key:    aws.String(c.objectName),
 		})
 
-		if err != nil {
-			log.Errorf("could not write to bucket %s: %v", c.bucketName, err)
-			metrics.RgwWriteFailed.Inc()
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		latency := float64(time.Since(start).Nanoseconds())
-		metrics.RgwWriteHist.Observe(latency)
-		metrics.RgwWrite.Set(latency)
-		log.Debugf("write to bucket took %d ns", latency)
-
-		w.WriteHeader(http.StatusOK)
+	if err != nil {
+		metrics.BucketReadFailed.Inc()
+		return "", fmt.Errorf("unable to read from bucket: %s", err)
 	}
+
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(object.Body)
+	if err != nil {
+		metrics.BucketReadFailed.Inc()
+		return "", fmt.Errorf("unable to read object body: %s", err)
+	}
+
+	latency := time.Since(start)
+	metrics.RgwReadHist.Observe(float64(latency.Nanoseconds()))
+	metrics.RgwRead.Set(float64(latency.Nanoseconds()))
+	log.Debugf("read from bucket took %d ms", latency.Milliseconds())
+
+	return buf.String(), nil
 }
 
-func (c *CephConfig) createServiceClient() (*s3.S3, error) {
+func (c *Ceph) write(data string) error {
+	start := time.Now()
+
+	_, err := c.client.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(c.config.bucketName),
+		Key:    aws.String(c.objectName),
+		Body:   bytes.NewReader([]byte(data)),
+	})
+
+	if err != nil {
+		metrics.RgwWriteFailed.Inc()
+		return fmt.Errorf("could not write to bucket %s: %v", c.config.bucketName, err)
+	}
+
+	latency := time.Since(start)
+	metrics.RgwWriteHist.Observe(float64(latency.Nanoseconds()))
+	metrics.RgwWrite.Set(float64(latency.Nanoseconds()))
+	log.Debugf("write to bucket took %d ms", latency.Milliseconds())
+	return nil
+}
+
+func createServiceClient(c *CephConfig) *s3.S3 {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
-			Credentials:      credentials.NewCredentials(&CephProvider{}),
+			Credentials:      credentials.NewCredentials(&Ceph{}),
 			Endpoint:         &c.host,
 			Region:           &c.region,
 			DisableSSL:       aws.Bool(true),
 			S3ForcePathStyle: &c.pathStyle,
-		}}))
+		},
+	}))
 
-	return s3.New(sess), nil
+	return s3.New(sess)
 }

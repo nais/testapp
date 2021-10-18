@@ -1,133 +1,116 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 
-	"github.com/nais/testapp/pkg/metrics"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/nais/testapp/pkg/metrics"
 )
 
-func WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := verifyDbPrerequisites(dbHost, dbPassword); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
+type Database struct {
+	client *sql.DB
+}
 
-		body, err := ioutil.ReadAll(r.Body)
-		d := string(body)
-		if len(d) > 5 || len(d) == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("cannot be empty or more than 5 characters"))
-			return
-		}
+func (db *Database) Name() string {
+	return "database"
+}
 
-		defer r.Body.Close()
+func (db *Database) Test(ctx context.Context, data string) (string, error) {
+	err := db.write(ctx, data)
+	if err != nil {
+		return "", err
+	}
 
-		db, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
-		defer db.Close()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
+	return db.read(ctx)
+}
 
-		stmt := `CREATE TABLE IF NOT EXISTS test (
-                        timestamp  BIGINT,
-                        data     VARCHAR(255)
-                )`
-		_, err = db.Exec(stmt)
-		if err != nil {
-			log.Errorf("failed creating table, error was: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		// Ensure empty table.
-		stmt = `TRUNCATE TABLE test`
-		_, err = db.Exec(stmt)
-		if err != nil {
-			log.Errorf("failed to truncate table: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		stmt = ` INSERT INTO test (timestamp, data) VALUES ($1, $2)`
-		start := time.Now()
-		_, err = db.Exec(stmt, time.Now().UnixNano(), d)
-		if err != nil {
-			metrics.DbInsertFailed.Inc()
-			log.Errorf("failed inserting to table, error was: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-		latency := float64(time.Since(start).Nanoseconds())
-		metrics.DbInsert.Set(latency)
-		metrics.DbInsertHist.Observe(latency)
-		log.Debugf("write to database took %d ns", latency)
-
-		w.WriteHeader(http.StatusCreated)
+func (db *Database) Cleanup() {
+	err := db.client.Close()
+	if err != nil {
+		log.Errorf("cleanup database: %v", err)
 	}
 }
 
-func ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost string) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := verifyDbPrerequisites(dbHost, dbPassword); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
+func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, error) {
+	err := verifyDbPrerequisites(dbHost, dbPassword)
+	if err != nil {
+		return nil, err
+	}
 
-		db, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
-		defer db.Close()
+	client, err := connectToDb(dbUser, dbPassword, dbName, dbHost)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Database{
+		client: client,
+	}, nil
+}
+
+//goland:noinspection SqlNoDataSourceInspection
+func (db *Database) Init(ctx context.Context) error {
+	stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
+	_, err := db.client.ExecContext(ctx, stmt)
+	if err != nil {
+		return fmt.Errorf("failed creating table, error was: %s", err)
+	}
+
+	return nil
+}
+
+//goland:noinspection SqlNoDataSourceInspection,SqlResolve
+func (db *Database) write(ctx context.Context, content string) error {
+	// Ensure empty table.
+	stmt := `TRUNCATE TABLE test`
+	_, err := db.client.ExecContext(ctx, stmt)
+	if err != nil {
+		return fmt.Errorf("failed to truncate table: %s", err)
+	}
+
+	stmt = ` INSERT INTO test (timestamp, data) VALUES ($1, $2)`
+	start := time.Now()
+	_, err = db.client.ExecContext(ctx, stmt, time.Now().UnixNano(), content)
+	if err != nil {
+		metrics.DbInsertFailed.Inc()
+		return fmt.Errorf("failed inserting to table, error was: %s", err)
+	}
+	latency := time.Since(start)
+	metrics.DbInsert.Set(float64(latency.Nanoseconds()))
+	metrics.DbInsertHist.Observe(float64(latency.Nanoseconds()))
+	log.Debugf("write to database took %d ms", latency.Milliseconds())
+	return nil
+}
+
+//goland:noinspection SqlNoDataSourceInspection,SqlResolve
+func (db *Database) read(ctx context.Context) (string, error) {
+	start := time.Now()
+	rows, err := db.client.QueryContext(ctx, "SELECT data FROM test")
+	if err != nil {
+		metrics.DbReadFailed.Inc()
+		return "", fmt.Errorf("could not get rows: %v", err)
+	}
+
+	latency := time.Since(start)
+	metrics.DbReadHist.Observe(float64(latency.Nanoseconds()))
+	metrics.DbRead.Set(float64(latency.Nanoseconds()))
+	log.Debugf("read from database took %d ns", latency.Milliseconds())
+	defer rows.Close()
+
+	if rows.Next() {
+		var data string
+		err = rows.Scan(&data)
 
 		if err != nil {
-			log.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
+			return "", err
 		}
-		start := time.Now()
-		rows, err := db.Query("SELECT data FROM test")
-		if err != nil {
-			metrics.DbReadFailed.Inc()
-			log.Errorf("could not get rows: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-		latency := float64(time.Since(start).Nanoseconds())
-		metrics.DbReadHist.Observe(latency)
-		metrics.DbRead.Set(latency)
-		log.Debugf("read from database took %d ns", latency)
-		defer rows.Close()
 
-		if rows.Next() {
-			row := make([]byte, 10)
-			err = rows.Scan(&row)
-
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-
-			log.Infof("%s", row)
-
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write(row)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+		return data, nil
+	} else {
+		return "", fmt.Errorf("no rows returned")
 	}
 }
 

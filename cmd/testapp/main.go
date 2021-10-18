@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,13 +16,15 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
+
 	"github.com/nais/testapp/pkg/bigquery"
 	"github.com/nais/testapp/pkg/bucket"
 	"github.com/nais/testapp/pkg/database"
 	"github.com/nais/testapp/pkg/metrics"
+	"github.com/nais/testapp/pkg/testable"
 	"github.com/nais/testapp/pkg/version"
-	log "github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
 )
 
 var (
@@ -107,6 +110,9 @@ func timeSinceDeploy() float64 {
 }
 
 func main() {
+	programContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 	hostname, _ := os.Hostname()
@@ -207,32 +213,56 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
-	// Bucket set-ups and endpoints
-	r.HandleFunc("/readbucket", bucket.ReadBucketHandler(bucketName, bucketObjectName))
-	r.HandleFunc("/writebucket", bucket.WriteBucketHandler(bucketName, bucketObjectName)).Methods(http.MethodPost)
 
-	// Ceph bucket set-ups and endpoints
-	if rgwAddress != "" && rgwAccessKey != "" && rgwSecretKey != "" {
-		bucket.Ceph.CephInit(rgwAddress, bucketName, "us-east-1", rgwAccessKey, rgwSecretKey)
-		r.HandleFunc("/readrgwbucket", bucket.Ceph.ReadBucketHandler(bucketObjectName))
-		r.HandleFunc("/writergwbucket", bucket.Ceph.WriteBucketHandler(bucketObjectName)).Methods(http.MethodPost)
+	// Holds all tests. Possible feature: /test to run all tests
+	var tests []testable.Testable
+
+	// Set up google bucket test
+	bucketTest, err := bucket.NewGoogleBucketTest(programContext, bucketName, bucketObjectName)
+	if err != nil {
+		log.Errorf("Error setting up bucket test: %v", err)
+	} else {
+		tests = append(tests, bucketTest)
 	}
 
-	// DB set-ups and endpoints
-	r.HandleFunc("/writedb", database.WriteDatabaseHandler(dbUser, dbPassword, dbName, dbHost)).Methods(http.MethodPost)
-	r.HandleFunc("/readdb", database.ReadDatabaseHandler(dbUser, dbPassword, dbName, dbHost))
+	// Set up ceph test
+	if rgwAddress != "" && rgwAccessKey != "" && rgwSecretKey != "" {
+		cephTest, err := bucket.NewCephBucketTest(rgwAddress, bucketName, "us-east-1", rgwAccessKey, rgwSecretKey, bucketObjectName)
+		if err != nil {
+			log.Errorf("Error setting up ceph bucket test: %v", err)
+		} else {
+			tests = append(tests, cephTest)
+		}
+	}
 
-	// Bigquery set-ups and endpoints
+	// Set up database test
+	databaseTest, err := database.NewDatabaseTest(dbUser, dbPassword, dbName, dbHost)
+	if err != nil {
+		log.Errorf("Error setting up bucket test: %v", err)
+	} else {
+		tests = append(tests, databaseTest)
+	}
+
+	// Set up bigquery test
 	if bigqueryName != "" && bigqueryTableName != "" {
-		// Use input parameters as feature toggle for bigquery
-		//  since testrig will crash apparently
-		err := bigquery.CreateDatasetAndTable(projectID, bigqueryName, bigqueryTableName)
-		switch {
-		case err != nil:
-			log.Errorf("Unable to create bigquery dataset and table, all tests will return HTTP STATUS 404: %v", err)
-		default:
-			r.HandleFunc("/writebigquery", bigquery.WriteBigQueryHandler(projectID, bigqueryName, bigqueryTableName)).Methods(http.MethodPost)
-			r.HandleFunc("/readbigquery", bigquery.ReadBigQueryHandler(projectID, bigqueryName, bigqueryTableName))
+		bq, err := bigquery.NewBigqueryTest(programContext, projectID, bigqueryName, bigqueryTableName)
+		err = bq.Init(programContext)
+		if err != nil {
+			log.Errorf("Error setting up bigquery test: %v", err)
+		} else {
+			tests = append(tests, bq)
+		}
+	}
+
+	for _, test := range tests {
+		err := test.Init(programContext)
+		if err != nil {
+			log.Errorf("Error initializing test: %s, will not set up handler.", test.Name())
+		} else {
+			setupTestHandler(r, test)
+
+			//goland:noinspection GoDeferInLoop
+			defer test.Cleanup()
 		}
 	}
 
@@ -243,7 +273,10 @@ func main() {
 	server := &http.Server{Addr: bindAddr, Handler: r}
 
 	go func() {
-		log.Fatal(server.ListenAndServe())
+		err := server.ListenAndServe()
+		if err != http.ErrServerClosed {
+			log.Errorf("closing http server: %v", err)
+		}
 	}()
 
 	<-interrupt
@@ -252,5 +285,35 @@ func main() {
 	time.Sleep(time.Duration(gracefulShutdownPeriodSeconds) * time.Second)
 	log.Print("shutting down")
 
-	_ = server.Shutdown(context.Background())
+	_ = server.Shutdown(programContext)
+}
+
+func setupTestHandler(router *mux.Router, test testable.Testable) {
+	log.Infof("setting up %s test handler", test.Name())
+
+	path := fmt.Sprintf("%s/test", test.Name())
+	router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		expected := fmt.Sprintf("%x", 9999+rand.Intn(999999))[:4]
+		result, err := test.Test(r.Context(), expected)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, respondErr := fmt.Fprintf(w, "%s test: error: %v", test.Name(), err)
+			if respondErr != nil {
+				log.Errorf("%s test: write response err: %v (test err: %v)", test.Name(), respondErr, err)
+			} else {
+				log.Warnf("%s test: failed, %v", test.Name(), err)
+			}
+			return
+		}
+
+		if expected != result {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, err := fmt.Fprintf(w, "%s test: data missmatch, epected: %s got: %s", test.Name(), expected, result)
+			if err != nil {
+				log.Errorf("%s test: unable to write response: %v", test.Name(), err)
+			}
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	})
 }
