@@ -13,12 +13,10 @@ simple go binary that exposes the following services
 * `/log` (logs "this is a log statement" with level `info`)
 * `/logerror` (logs "this is a error log statement" with level `error`)
 * `/logevent` (logs "this is a event log statement" with `logtype` set to `event`. Query parameters will be added as fields)
-* `/writebucket` (writes request payload to configured bucket (HTTP POST))
-* `/readbucket` (reads and outputs current bucket content)
-* `/writedb` (writes request payload to configured database (HTTP POST))
-* `/readdb` (reads and outputs current database content)
-* `/writebigquery` (create table in bigquery dataset and insert a row (HTTP POST))
-* `/readbigquery`(read current bigquery table content)
+* `/database/test` (test that write/read works for database)
+* `/bucket/test` (test that write/read works for bucket)
+* `/ceph/test` (test that write/read works for ceph)
+* `/bigquery/test` (test that write/read works for bigquery)
 
 ## binaries
 the docker container has the following binaries
