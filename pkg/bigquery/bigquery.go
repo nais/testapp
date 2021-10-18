@@ -173,10 +173,5 @@ func createBigQueryTable(ctx context.Context, tableRef *bigquery.Table) error {
 		ExpirationTime: time.Now().AddDate(1, 0, 0), // Table will be automatically deleted in 1 year.
 	}
 
-	if err := tableRef.Create(ctx, metaData); err != nil {
-		log.Errorf("failed creating table, error was: %s", err)
-		return err
-	}
-
-	return nil
+	return tableRef.Create(ctx, metaData)
 }

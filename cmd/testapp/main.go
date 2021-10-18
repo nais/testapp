@@ -220,7 +220,7 @@ func main() {
 	// Set up google bucket test
 	bucketTest, err := bucket.NewGoogleBucketTest(programContext, bucketName, bucketObjectName)
 	if err != nil {
-		log.Errorf("Error setting up bucket test: %v", err)
+		log.Errorf("Error setting up google bucket test: %v", err)
 	} else {
 		tests = append(tests, bucketTest)
 	}
@@ -238,7 +238,7 @@ func main() {
 	// Set up database test
 	databaseTest, err := database.NewDatabaseTest(dbUser, dbPassword, dbName, dbHost)
 	if err != nil {
-		log.Errorf("Error setting up bucket test: %v", err)
+		log.Errorf("Error setting up database test: %v", err)
 	} else {
 		tests = append(tests, databaseTest)
 	}
@@ -257,7 +257,7 @@ func main() {
 	for _, test := range tests {
 		err := test.Init(programContext)
 		if err != nil {
-			log.Errorf("Error initializing test: %s, will not set up handler.", test.Name())
+			log.Errorf("Error initializing test: %s, will not set up handler. err: %v", test.Name(), err)
 		} else {
 			setupTestHandler(r, test)
 
