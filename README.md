@@ -5,7 +5,7 @@
 simple go binary that exposes the following services
 
 * `/env`  (prints all environment variables)
-* `/ping` (returns "pong\n" and HTTP 200)
+* `/ping(?delay=<duration>)` (returns "pong\n" and HTTP 200. Valid durations include 10s, 6m, 9h etc, and will delay the response accordingly)
 * `/hostname` (prints hostname)
 * `/metrics` (prints Prometheus metrics)) 
 * `/version` (prints running version of testapp binary) 

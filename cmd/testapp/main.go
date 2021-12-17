@@ -133,7 +133,12 @@ func main() {
 
 	r.Handle("/metrics", metrics.Handler())
 
-	r.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
+	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		param := r.URL.Query().Get("delay")
+		if d, err := time.ParseDuration(param); err == nil {
+			time.Sleep(d)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprint(w, pingResponse)
 	})
