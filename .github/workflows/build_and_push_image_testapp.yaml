@@ -1,8 +1,8 @@
 name: Build and deploy testapp
 on:
   push:
-    branch:
-      master
+    branches:
+      - master
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: Dockerfile
+          file: Dockerfile_naas
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
