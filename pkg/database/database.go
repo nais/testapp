@@ -53,14 +53,17 @@ func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, erro
 }
 
 //goland:noinspection SqlNoDataSourceInspection
-func (db *Database) Init(ctx context.Context) error {
-	err := util.Retry(func() error {
+func (db *Database) Init(ctx context.Context, retries int) error {
+	retryCtx, cancel := context.WithTimeout(ctx, 500*time.Duration(retries)*time.Millisecond)
+	defer cancel()
+
+	err := util.Retry(retryCtx, func() error {
 		stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
 		_, err := db.client.ExecContext(ctx, stmt)
 		return err
 	}, func(err error) bool {
 		return false
-	}, 10)
+	}, retries)
 
 	if err != nil {
 		return fmt.Errorf("failed creating table, error was: %s", err)

@@ -36,7 +36,7 @@ func NewGoogleBucketTest(ctx context.Context, bucketName, bucketObjectName strin
 	}, nil
 }
 
-func (bucket *Bucket) Init(ctx context.Context) error {
+func (bucket *Bucket) Init(ctx context.Context, retries int) error {
 	return nil
 }
 

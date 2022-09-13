@@ -33,7 +33,7 @@ require (
 	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
-	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
+	golang.org/x/sys v0.0.0-20220913120320-3275c407cedc // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20190917162342-3b4f30a44f3b // indirect
 	google.golang.org/appengine v1.6.1 // indirect
@@ -42,4 +42,4 @@ require (
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
 
-go 1.17
+go 1.19

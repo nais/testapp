@@ -140,7 +140,7 @@ func (bq *BigQuery) truncate(ctx context.Context) {
 	}
 }
 
-func (bq *BigQuery) Init(ctx context.Context) error {
+func (bq *BigQuery) Init(ctx context.Context, retries int) error {
 	errorOK := func(err error) bool {
 		e, ok := err.(*googleapi.Error)
 		if ok && e.Code == 409 {
@@ -150,10 +150,14 @@ func (bq *BigQuery) Init(ctx context.Context) error {
 		return false
 	}
 
+	retryCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	err := util.Retry(
+		retryCtx,
 		func() error { return createBigQueryTable(ctx, bq.table) },
 		errorOK,
-		10,
+		retries,
 	)
 
 	if err != nil {

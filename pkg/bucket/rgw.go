@@ -73,7 +73,7 @@ func (c *Ceph) Test(ctx context.Context, data string) (string, error) {
 	return c.read()
 }
 
-func (c *Ceph) Init(ctx context.Context) error {
+func (c *Ceph) Init(ctx context.Context, retries int) error {
 	return nil
 }
 
