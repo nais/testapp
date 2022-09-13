@@ -54,7 +54,7 @@ func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, erro
 
 //goland:noinspection SqlNoDataSourceInspection
 func (db *Database) Init(ctx context.Context, retries int) error {
-	retryCtx, cancel := context.WithTimeout(ctx, 500*time.Duration(retries)*time.Millisecond)
+	retryCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	err := util.Retry(retryCtx, func() error {
