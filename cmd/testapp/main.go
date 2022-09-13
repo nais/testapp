@@ -230,16 +230,6 @@ func main() {
 		tests = append(tests, bucketTest)
 	}
 
-	// Set up ceph test
-	if rgwAddress != "" && rgwAccessKey != "" && rgwSecretKey != "" {
-		cephTest, err := bucket.NewCephBucketTest(rgwAddress, bucketName, "us-east-1", rgwAccessKey, rgwSecretKey, bucketObjectName)
-		if err != nil {
-			log.Errorf("Error setting up ceph bucket test: %v", err)
-		} else {
-			tests = append(tests, cephTest)
-		}
-	}
-
 	// Set up database test
 	databaseTest, err := database.NewDatabaseTest(dbUser, dbPassword, dbName, dbHost)
 	if err != nil {
