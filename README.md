@@ -15,7 +15,6 @@ simple go binary that exposes the following services
 * `/logevent` (logs "this is a event log statement" with `logtype` set to `event`. Query parameters will be added as fields)
 * `/database/test` (test that write/read works for database)
 * `/bucket/test` (test that write/read works for bucket)
-* `/ceph/test` (test that write/read works for ceph)
 * `/bigquery/test` (test that write/read works for bigquery)
 
 ## binaries
