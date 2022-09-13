@@ -1,8 +1,5 @@
 name: Build and deploy testapp
-on:
-  push:
-    branches:
-      - master
+on: [push]
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
@@ -17,6 +14,7 @@ jobs:
       - run: go version
       - run: go test -cover -tags integration_test ./...
   build_and_push_testapp:
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [test]
     permissions:
       contents: "read"
