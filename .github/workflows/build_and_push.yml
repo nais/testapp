@@ -17,7 +17,7 @@ jobs:
         echo "image_version=$version" >> $GITHUB_ENV
         echo "image_prefix=$prefix" >> $GITHUB_ENV
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@ab80d026d4753220c4243394c07c7d80f9638d06 # Use commit-sha1 instead of tag for security concerns
+      uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # Use commit-sha1 instead of tag for security concerns
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
