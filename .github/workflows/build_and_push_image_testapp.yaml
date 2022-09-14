@@ -56,7 +56,7 @@ jobs:
             type=semver,pattern=v{{major}}
             type=sha
       - name: Build and push testapp
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: Dockerfile_naas
