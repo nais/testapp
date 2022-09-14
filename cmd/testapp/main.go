@@ -46,7 +46,7 @@ var (
 	rgwAddress                    string
 	rgwAccessKey                  string
 	rgwSecretKey                  string
-	maxRetry                      int
+	retryMax                      int
 	retryInterval                 int
 )
 
@@ -78,7 +78,7 @@ func init() {
 	flag.BoolVar(&debug, "debug", getEnvBool("DEBUG", false), "debug log")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
-	flag.IntVar(&maxRetry, "max-retry", 30, "how long in seconds to retry connecting to database")
+	flag.IntVar(&retryMax, "retry-max", 30, "how long in seconds to retry connecting to database")
 	flag.IntVar(&retryInterval, "retry-interval", 5, "how many retries before sending interrupt signal to server")
 	flag.Parse()
 }
@@ -245,7 +245,7 @@ func main() {
 	}
 
 	// Set up database test
-	databaseTest, err := database.NewDatabaseTest(programContext, dbUser, dbPassword, dbName, dbHost, maxRetry, retryInterval)
+	databaseTest, err := database.NewDatabaseTest(programContext, dbUser, dbPassword, dbName, dbHost, retryMax, retryInterval)
 	if err != nil {
 		log.Errorf("Error setting up database test: %v", err)
 	} else {
@@ -254,7 +254,7 @@ func main() {
 
 	// Set up bigquery test
 	if bigqueryName != "" && bigqueryTableName != "" {
-		bq, err := bigquery.NewBigqueryTest(programContext, projectID, bigqueryName, bigqueryTableName, maxRetry, retryInterval)
+		bq, err := bigquery.NewBigqueryTest(programContext, projectID, bigqueryName, bigqueryTableName, retryMax, retryInterval)
 		err = bq.Init(programContext)
 		if err != nil {
 			log.Errorf("Error setting up bigquery test: %v", err)
