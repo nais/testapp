@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -46,7 +46,8 @@ var (
 	rgwAddress                    string
 	rgwAccessKey                  string
 	rgwSecretKey                  string
-	retries                       int
+	maxRetry                      int
+	retryInterval                 int
 )
 
 var (
@@ -77,7 +78,8 @@ func init() {
 	flag.BoolVar(&debug, "debug", getEnvBool("DEBUG", false), "debug log")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
-	flag.IntVar(&retries, "retries", 10, "how many retries before sending interrupt signal to server")
+	flag.IntVar(&maxRetry, "max-retry", 30, "how long in seconds to retry connecting to database")
+	flag.IntVar(&retryInterval, "retry-interval", 5, "how many retries before sending interrupt signal to server")
 	flag.Parse()
 }
 
@@ -209,7 +211,7 @@ func main() {
 			return
 		}
 
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Error("error reading response body", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -243,7 +245,7 @@ func main() {
 	}
 
 	// Set up database test
-	databaseTest, err := database.NewDatabaseTest(dbUser, dbPassword, dbName, dbHost)
+	databaseTest, err := database.NewDatabaseTest(programContext, dbUser, dbPassword, dbName, dbHost, maxRetry, retryInterval)
 	if err != nil {
 		log.Errorf("Error setting up database test: %v", err)
 	} else {
@@ -252,8 +254,8 @@ func main() {
 
 	// Set up bigquery test
 	if bigqueryName != "" && bigqueryTableName != "" {
-		bq, err := bigquery.NewBigqueryTest(programContext, projectID, bigqueryName, bigqueryTableName)
-		err = bq.Init(programContext, retries)
+		bq, err := bigquery.NewBigqueryTest(programContext, projectID, bigqueryName, bigqueryTableName, maxRetry, retryInterval)
+		err = bq.Init(programContext)
 		if err != nil {
 			log.Errorf("Error setting up bigquery test: %v", err)
 		} else {
@@ -262,7 +264,7 @@ func main() {
 	}
 
 	for _, test := range tests {
-		err := test.Init(programContext, retries)
+		err := test.Init(programContext)
 		if err != nil {
 			log.Errorf("Error initializing test: %s, will not set up handler. err: %v", test.Name(), err)
 		} else {

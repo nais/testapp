@@ -3,6 +3,7 @@ package bigquery
 import (
 	"context"
 	"fmt"
+	"github.com/nais/testapp/pkg/retry"
 	"strings"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/nais/testapp/pkg/metrics"
-	"github.com/nais/testapp/pkg/util"
 )
 
 // Item represents a row item.
@@ -21,23 +21,31 @@ type Item struct {
 }
 
 type BigQuery struct {
-	client *bigquery.Client
-	table  *bigquery.Table
+	client             *bigquery.Client
+	table              *bigquery.Table
+	retryContextConfig *retry.ContextConfig
 }
 
 func (bq *BigQuery) Name() string {
 	return "bigquery"
 }
 
-func NewBigqueryTest(ctx context.Context, projectID, datasetID, tableID string) (*BigQuery, error) {
+func NewBigqueryTest(ctx context.Context, projectID, datasetID, tableID string, maxRetry, retryInterval int) (*BigQuery, error) {
 	client, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 
+	retryConfig := retry.NewContextConfig(
+		ctx,
+		maxRetry,
+		retryInterval,
+	)
+
 	return &BigQuery{
-		client: client,
-		table:  client.Dataset(datasetID).Table(tableID),
+		client:             client,
+		table:              client.Dataset(datasetID).Table(tableID),
+		retryContextConfig: retryConfig,
 	}, nil
 }
 
@@ -140,7 +148,7 @@ func (bq *BigQuery) truncate(ctx context.Context) {
 	}
 }
 
-func (bq *BigQuery) Init(ctx context.Context, retries int) error {
+func (bq *BigQuery) Init(ctx context.Context) error {
 	errorOK := func(err error) bool {
 		e, ok := err.(*googleapi.Error)
 		if ok && e.Code == 409 {
@@ -150,14 +158,12 @@ func (bq *BigQuery) Init(ctx context.Context, retries int) error {
 		return false
 	}
 
-	retryCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	defer bq.retryContextConfig.Cancel()
 
-	err := util.Retry(
-		retryCtx,
+	err := retry.Do(
+		bq.retryContextConfig,
 		func() error { return createBigQueryTable(ctx, bq.table) },
 		errorOK,
-		retries,
 	)
 
 	if err != nil {

@@ -4,16 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/nais/testapp/pkg/retry"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nais/testapp/pkg/metrics"
-	"github.com/nais/testapp/pkg/util"
 )
 
 type Database struct {
-	client *sql.DB
+	client             *sql.DB
+	retryContextConfig *retry.ContextConfig
 }
 
 func (db *Database) Name() string {
@@ -36,7 +37,7 @@ func (db *Database) Cleanup() {
 	}
 }
 
-func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, error) {
+func NewDatabaseTest(ctx context.Context, dbUser, dbPassword, dbName, dbHost string, maxRetry, retryInterval int) (*Database, error) {
 	err := verifyDbPrerequisites(dbHost, dbPassword)
 	if err != nil {
 		return nil, err
@@ -47,23 +48,29 @@ func NewDatabaseTest(dbUser, dbPassword, dbName, dbHost string) (*Database, erro
 		return nil, err
 	}
 
+	retryConfig := retry.NewContextConfig(
+		ctx,
+		maxRetry,
+		retryInterval,
+	)
+
 	return &Database{
-		client: client,
+		client:             client,
+		retryContextConfig: retryConfig,
 	}, nil
 }
 
 //goland:noinspection SqlNoDataSourceInspection
-func (db *Database) Init(ctx context.Context, retries int) error {
-	retryCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (db *Database) Init(ctx context.Context) error {
+	defer db.retryContextConfig.Cancel()
 
-	err := util.Retry(retryCtx, func() error {
+	err := retry.Do(db.retryContextConfig, func() error {
 		stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
 		_, err := db.client.ExecContext(ctx, stmt)
 		return err
 	}, func(err error) bool {
 		return false
-	}, retries)
+	})
 
 	if err != nil {
 		return fmt.Errorf("failed creating table, error was: %s", err)
