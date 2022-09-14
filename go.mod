@@ -3,7 +3,6 @@ module github.com/nais/testapp
 require (
 	cloud.google.com/go/bigquery v1.0.1
 	cloud.google.com/go/storage v1.1.1
-	github.com/aws/aws-sdk-go v1.38.71
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/lib/pq v1.2.0
@@ -20,7 +19,6 @@ require (
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
@@ -33,7 +31,7 @@ require (
 	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
-	golang.org/x/sys v0.0.0-20220913120320-3275c407cedc // indirect
+	golang.org/x/sys v0.0.0-20220913175220-63ea55921009 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20190917162342-3b4f30a44f3b // indirect
 	google.golang.org/appengine v1.6.1 // indirect
