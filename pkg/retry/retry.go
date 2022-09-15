@@ -14,17 +14,20 @@ type ContextConfig struct {
 }
 
 func NewContextConfig(ctx context.Context, max, timeout int) *ContextConfig {
+	m := time.Duration(max) * time.Second
+	t := time.Duration(timeout) * time.Second
+
 	retryCtx, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(max),
+		m,
 	)
 
 	defer cancel()
 
 	return &ContextConfig{
 		Ctx:     retryCtx,
-		max:     time.Duration(max),
-		timeout: time.Duration(timeout),
+		max:     m,
+		timeout: t,
 	}
 }
 
