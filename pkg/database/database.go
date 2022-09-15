@@ -144,10 +144,24 @@ func connectToDb(dbUser, dbPassword, dbName, dbHost string) (*sql.DB, error) {
 		dbName,
 		dbHost)
 
-	db, err := sql.Open("postgres", postgresConnection)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database, error was: %s", err)
-	}
+	ticker := time.NewTicker(10 * time.Second)
+	timeout := 2 * time.Minute
+	defer ticker.Stop()
 
-	return db, nil
+	for {
+		select {
+		case <-time.After(timeout):
+			return nil, fmt.Errorf("db connection failed after %s timeout", timeout)
+
+		case <-ticker.C:
+			db, err := sql.Open("postgres", postgresConnection)
+			if err == nil {
+				return db, nil
+			}
+
+			if err != nil {
+				log.Error(err, "failed to connect to db %s", dbName)
+			}
+		}
+	}
 }
