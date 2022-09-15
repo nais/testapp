@@ -78,7 +78,7 @@ func init() {
 	flag.BoolVar(&debug, "debug", getEnvBool("DEBUG", false), "debug log")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
-	flag.IntVar(&retryMax, "retry-max", 30, "how long in seconds to retry connecting to database")
+	flag.IntVar(&retryMax, "retry-max", 50, "how long in seconds to retry connecting to database")
 	flag.IntVar(&retryInterval, "retry-interval", 5, "how many retries before sending interrupt signal to server")
 	flag.Parse()
 }

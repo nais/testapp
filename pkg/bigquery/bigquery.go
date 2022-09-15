@@ -158,11 +158,9 @@ func (bq *BigQuery) Init(ctx context.Context) error {
 		return false
 	}
 
-	defer bq.retryContextConfig.Cancel()
-
 	err := retry.Do(
 		bq.retryContextConfig,
-		func() error { return createBigQueryTable(ctx, bq.table) },
+		func() error { return createBigQueryTable(bq.retryContextConfig.Ctx, bq.table) },
 		errorOK,
 	)
 
