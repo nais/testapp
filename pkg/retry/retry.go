@@ -42,7 +42,7 @@ func Do(config *ContextConfig, statement func() error, errorOK func(err error) b
 
 		select {
 		case <-config.Ctx.Done():
-			return fmt.Errorf("gave up retrying after %d seconds: last error: %v", config.max, err)
+			return fmt.Errorf("gave up retrying after %f seconds: last error: %v", config.max.Seconds(), err)
 		case <-time.After(config.timeout):
 			attempt++
 			log.Infof("retrying %d", attempt)

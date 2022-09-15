@@ -64,7 +64,7 @@ func NewDatabaseTest(ctx context.Context, dbUser, dbPassword, dbName, dbHost str
 func (db *Database) Init(ctx context.Context) error {
 	err := retry.Do(db.retryContextConfig, func() error {
 		stmt := `CREATE TABLE IF NOT EXISTS test (timestamp BIGINT, data VARCHAR(255))`
-		_, err := db.client.ExecContext(db.retryContextConfig.Ctx, stmt)
+		_, err := db.client.ExecContext(ctx, stmt)
 		return err
 	}, func(err error) bool {
 		return false
