@@ -156,6 +156,7 @@ func connectToDb(dbUser, dbPassword, dbName, dbHost string) (*sql.DB, error) {
 		case <-ticker.C:
 			db, err := sql.Open("postgres", postgresConnection)
 			if err == nil {
+				log.Infof("db %s connected successfully", dbName)
 				return db, nil
 			}
 

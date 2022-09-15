@@ -37,6 +37,7 @@ func Do(config *ContextConfig, statement func() error, errorOK func(err error) b
 	for {
 		err = statement()
 		if err == nil || errorOK(err) {
+			log.Infof("initial test statement succeeded after %d attempts", attempt+1)
 			return nil
 		}
 
