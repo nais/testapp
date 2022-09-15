@@ -42,7 +42,7 @@ func Do(config *ContextConfig, statement func() error, errorOK func(err error) b
 			return fmt.Errorf("gave up retrying after %d seconds: last error: %v", config.max, err)
 		case <-time.After(config.timeout * time.Second):
 			attempt++
-			log.Info("retrying %d", attempt)
+			log.Infof("retrying %d", attempt)
 		}
 	}
 }
