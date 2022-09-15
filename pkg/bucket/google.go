@@ -3,9 +3,7 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"google.golang.org/api/iterator"
 	"io"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -41,16 +39,12 @@ func NewGoogleBucketTest(ctx context.Context, bucketName, bucketObjectName strin
 }
 
 func (bucket *Bucket) Init(ctx context.Context) error {
-	it := bucket.client.Buckets(ctx, os.Getenv("GCP_TEAM_PROJECT_ID"))
-	for {
-		_, err := it.Next()
-		if err == iterator.Done {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("unable to list buckets: %s", err)
-		}
+	r, err := bucket.object.NewReader(ctx)
+	defer closeStorageReader(r)
+	if err != nil {
+		return fmt.Errorf("unable to create reader: %s", err)
 	}
+	return nil
 }
 
 func (bucket *Bucket) Cleanup() {
