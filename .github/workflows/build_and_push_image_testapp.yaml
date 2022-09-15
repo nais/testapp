@@ -14,7 +14,7 @@ jobs:
       - run: go version
       - run: go test -cover -tags integration_test ./...
   build_and_push_testapp:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: [test]
     permissions:
       contents: "read"
