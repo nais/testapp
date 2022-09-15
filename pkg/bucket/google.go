@@ -3,7 +3,9 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"google.golang.org/api/iterator"
+	"io"
+	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -13,6 +15,7 @@ import (
 )
 
 type Bucket struct {
+	name   string
 	client *storage.Client
 	object *storage.ObjectHandle
 }
@@ -31,13 +34,23 @@ func NewGoogleBucketTest(ctx context.Context, bucketName, bucketObjectName strin
 	object := client.Bucket(bucketName).Object(bucketObjectName)
 
 	return &Bucket{
+		name:   bucketName,
 		client: client,
 		object: object,
 	}, nil
 }
 
 func (bucket *Bucket) Init(ctx context.Context) error {
-	return nil
+	it := bucket.client.Buckets(ctx, os.Getenv("GCP_TEAM_PROJECT_ID"))
+	for {
+		_, err := it.Next()
+		if err == iterator.Done {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("unable to list buckets: %s", err)
+		}
+	}
 }
 
 func (bucket *Bucket) Cleanup() {
@@ -66,7 +79,7 @@ func (bucket *Bucket) read(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("unable to create reader: %s", err)
 	}
 
-	res, err := ioutil.ReadAll(reader)
+	res, err := io.ReadAll(reader)
 	if err != nil {
 		metrics.BucketReadFailed.Inc()
 		return "", fmt.Errorf("unable to read from bucket: %s", err)
@@ -81,16 +94,14 @@ func (bucket *Bucket) read(ctx context.Context) (string, error) {
 }
 
 func (bucket *Bucket) write(ctx context.Context, content string) error {
-	writer := bucket.object.NewWriter(context.Background())
+	writer := bucket.object.NewWriter(ctx)
 	start := time.Now()
+	defer closeStorageWriter(writer)
+
 	_, err := writer.Write([]byte(content))
 	if err != nil {
 		metrics.BucketWriteFailed.Inc()
 		return fmt.Errorf("unable to write to bucket: %s", err)
-	}
-
-	if err := writer.Close(); err != nil {
-		return fmt.Errorf("unable to close bucket writer: %s", err)
 	}
 
 	latency := time.Since(start)
@@ -112,6 +123,18 @@ func cacheControl(cacheControl string) storage.ObjectAttrsToUpdate {
 		CacheControl: cacheControl,
 	}
 	return objectAttrsToUpdate
+}
+
+func closeStorageWriter(reader *storage.Writer) {
+	if reader != nil {
+		err := reader.Close()
+
+		if err != nil {
+			log.Errorf("Failed to close storage writer: %s", err)
+		}
+	} else {
+		log.Warn("Attempted to close nil reader")
+	}
 }
 
 func closeStorageReader(reader *storage.Reader) {

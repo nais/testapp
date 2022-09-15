@@ -38,6 +38,7 @@ func NewBigqueryTest(ctx context.Context, projectID, datasetID, tableID string, 
 
 	retryConfig := retry.NewContextConfig(
 		ctx,
+		tableID,
 		maxRetry,
 		retryInterval,
 	)

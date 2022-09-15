@@ -50,6 +50,7 @@ func NewDatabaseTest(ctx context.Context, dbUser, dbPassword, dbName, dbHost str
 
 	retryConfig := retry.NewContextConfig(
 		ctx,
+		dbName,
 		maxRetry,
 		retryInterval,
 	)
