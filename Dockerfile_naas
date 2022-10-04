@@ -1,4 +1,4 @@
-FROM golang:1.19.1-alpine as builder
+FROM golang:1.19.2-alpine as builder
 RUN apk add --no-cache git make
 ENV GOOS=linux
 ENV CGO_ENABLED=0
