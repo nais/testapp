@@ -16,6 +16,7 @@ simple go binary that exposes the following services
 * `/database/test` (test that write/read works for database)
 * `/bucket/test` (test that write/read works for bucket)
 * `/bigquery/test` (test that write/read works for bigquery)
+* `/kafka/test` (test that connects to aiven kafka)
 
 ## binaries
 the docker container has the following binaries
