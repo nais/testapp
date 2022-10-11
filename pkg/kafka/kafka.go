@@ -79,7 +79,9 @@ func (kafka *Kafka) Test(ctx context.Context, data string) (string, error) {
 			return "", fmt.Errorf("verifying connection to broker: %s: %w", b.Addr(), err)
 
 		}
+		if err := b.Close(); err != nil {
+			return "", fmt.Errorf("could not close connection: %w", err)
+		}
 	}
-
 	return data, nil
 }
