@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/nais/testapp/pkg/kafka"
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 
@@ -39,6 +40,10 @@ var (
 	dbPassword                    string
 	dbHost                        string
 	dbName                        string
+	kafkaBrokers                  string
+	kafkaCertificatePath          string
+	kafkaPrivateKeyPath           string
+	kafkaCAPath                   string
 	bigqueryName                  string
 	bigqueryTableName             string
 	projectID                     string
@@ -75,6 +80,10 @@ func init() {
 	flag.StringVar(&dbUser, "db-user", defaultDbUsername, "database username")
 	flag.StringVar(&dbPassword, "db-password", defaultDbPassword, "database password")
 	flag.StringVar(&dbHost, "db-hostname", "localhost", "database hostname")
+	flag.StringVar(&kafkaBrokers, "kafka-brokers", os.Getenv("KAFKA_BROKERS"), "kafka brokers")
+	flag.StringVar(&kafkaCertificatePath, "kafka-certificate-path", os.Getenv("KAFKA_CERTIFICATE_PATH"), "kafka certificate path")
+	flag.StringVar(&kafkaPrivateKeyPath, "kafka-private-key-path", os.Getenv("KAFKA_PRIVATE_KEY_PATH"), "kafka private key path")
+	flag.StringVar(&kafkaCAPath, "kafka-ca-path", os.Getenv("KAFKA_CA_PATH"), "kafka ca path")
 	flag.BoolVar(&debug, "debug", getEnvBool("DEBUG", false), "debug log")
 	flag.IntVar(&gracefulShutdownPeriodSeconds, "graceful-shutdown-wait", 0, "when receiving interrupt signal, it will wait this amount of seconds before shutting down server")
 	flag.Int64Var(&deployStartTimestamp, "deploy-start-time", getEnvInt("DEPLOY_START", time.Now().UnixNano()), "unix timestamp with nanoseconds, specifies when NAIS deploy of testapp started")
@@ -225,6 +234,13 @@ func main() {
 
 	// Holds all tests. Possible feature: /test to run all tests
 	var tests []testable.Testable
+
+	kafkaTest, err := kafka.NewKafkaTest(kafkaBrokers, kafkaCAPath, kafkaCertificatePath, kafkaPrivateKeyPath)
+	if err != nil {
+		log.Errorf("Error setting up kafka test: %v", err)
+	} else {
+		tests = append(tests, kafkaTest)
+	}
 
 	// Set up google bucket test
 	bucketTest, err := bucket.NewGoogleBucketTest(programContext, bucketName, bucketObjectName)
