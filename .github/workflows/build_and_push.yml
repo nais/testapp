@@ -8,7 +8,7 @@ jobs:
     name: build
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v3
     - name: docker build & test (in Dockerfile)
       run: |
         version="$(date '+%Y-%m-%d')-$(git --no-pager log -1 --pretty=%h)"
