@@ -51,15 +51,3 @@ jobs:
             org.opencontainers.image.version=${{ env.NEW_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - uses: azure/setup-helm@v1
-        name: "Setup Helm"
-        with:
-          version: "3.8.0"
-      - name: Build Chart
-        run: |-
-          sed -i "s/^version: .*/version: ${{ env.NEW_VERSION }}/g" feature/Chart.yaml
-          cat feature/Chart.yaml
-          helm package feature
-      - name: Push Chart
-        run: |-
-          helm push ${{ env.NAME }}*.tgz oci://europe-north1-docker.pkg.dev/nais-io/nais
