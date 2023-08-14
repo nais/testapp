@@ -11,7 +11,7 @@ RUN make release
 RUN go get github.com/rakyll/hey
 RUN go install github.com/rakyll/hey
 
-FROM alpine:3.18.0
+FROM alpine:3.18.3
 RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd nmap socat bash openssl tcpdump tcptraceroute strace iperf busybox-extras
 WORKDIR /app
 COPY --from=builder /src/bin/testapp /app/testapp
