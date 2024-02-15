@@ -16,7 +16,7 @@ jobs:
     name: Build and push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Create new version
         run: |
           echo "NEW_VERSION: $(date '+%Y.%-m.%-d')-$(git rev-parse --short HEAD)"
@@ -31,16 +31,16 @@ jobs:
           token_format: "access_token"
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Login to registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: "oauth2accesstoken"
           password: "${{ steps.auth.outputs.access_token }}"
       - name: Build and push
         if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile

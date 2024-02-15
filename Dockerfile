@@ -1,4 +1,4 @@
-FROM golang:1.20.4-alpine as builder
+FROM golang:1.22.0-alpine as builder
 RUN apk add --no-cache git make
 ENV GOOS=linux
 ENV CGO_ENABLED=0
@@ -11,7 +11,7 @@ RUN make release
 RUN go get github.com/rakyll/hey
 RUN go install github.com/rakyll/hey
 
-FROM alpine:3.18.0
+FROM alpine:3.18.3
 RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd nmap socat bash openssl tcpdump tcptraceroute strace iperf busybox-extras
 WORKDIR /app
 COPY --from=builder /src/bin/testapp /app/testapp
