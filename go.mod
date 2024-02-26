@@ -6,7 +6,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 )
 
-require github.com/prometheus/common v0.47.0
+require github.com/prometheus/common v0.48.0
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
