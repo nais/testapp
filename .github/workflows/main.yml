@@ -43,7 +43,7 @@ jobs:
         uses: nais/platform-build-push-sign@main
         with:
           push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.NEW_VERSION }}
+          extra_tags: ${{ env.NEW_VERSION }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ env.NEW_VERSION }}
