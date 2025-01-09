@@ -38,16 +38,16 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: "oauth2accesstoken"
           password: "${{ steps.auth.outputs.access_token }}"
-      - name: Build and push
+      - name: Build, push and sign
         if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
+        uses: nais/platform-build-push-sign@main
         with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.NEW_VERSION }},${{ env.REGISTRY }}/${{ env.NAME }}:latest
+          push: ${{ github.actor != 'dependabot[bot]' }}
+          tags: ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.NEW_VERSION }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ env.NEW_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          google_service_account: "gh-${{ env.NAME }}"
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
