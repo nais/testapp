@@ -44,10 +44,5 @@ jobs:
         with:
           push: ${{ github.actor != 'dependabot[bot]' }}
           extra_tags: ${{ env.NEW_VERSION }}
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ env.NEW_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           google_service_account: "gh-${{ env.NAME }}"
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
