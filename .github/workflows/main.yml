@@ -42,6 +42,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: nais/platform-build-push-sign@main
         with:
+          name: ${{ env.NAME }}
           push: ${{ github.actor != 'dependabot[bot]' }}
           extra_tags: ${{ env.NEW_VERSION }}
           google_service_account: "gh-${{ env.NAME }}"
