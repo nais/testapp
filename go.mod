@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/common v0.64.0
+	github.com/prometheus/common v0.65.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.6
 	golang.org/x/sys v0.33.0 // indirect
