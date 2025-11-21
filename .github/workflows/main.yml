@@ -54,7 +54,7 @@ jobs:
       - uses: jdx/mise-action@v2
         with:
           cache_key_prefix: mise-build-push
-      - run: mise run build:release
+      - run: mise run build:testapp
       - uses: nais/platform-build-push-sign@main
         id: build-push-sign
         with:

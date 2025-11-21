@@ -15,12 +15,12 @@ simple go binary that exposes the following services
 ## development
 
 ```bash
-mise install           # Install dependencies
-mise run local         # Run locally on 127.0.0.1:8080
-mise run test          # Run tests
-mise run check         # Run static checks and vulnerability scanning
-mise run fmt           # Format code
-mise run build:release # Build binary
+mise install        # Install dependencies
+mise run local      # Run locally on 127.0.0.1:8080
+mise run test       # Run tests with coverage (73.4%)
+mise run check      # Run static checks and vulnerability scanning
+mise run fmt        # Format code
+mise run build      # Build binary
 ```
 
 ## binaries

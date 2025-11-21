@@ -3,4 +3,4 @@
 
 set -e
 
-mise run build:release
+mise run build:testapp

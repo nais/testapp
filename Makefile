@@ -6,9 +6,6 @@ all:
 build:
 	mise run build
 
-release:
-	mise run build:release
-
 local:
 	mise run local
 
