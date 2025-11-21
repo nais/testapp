@@ -20,7 +20,7 @@ mise run local         # Run locally on 127.0.0.1:8080
 mise run test          # Run tests
 mise run check         # Run static checks and vulnerability scanning
 mise run fmt           # Format code
-mise run build:testapp # Build binary
+mise run build:release # Build binary
 ```
 
 ## binaries
