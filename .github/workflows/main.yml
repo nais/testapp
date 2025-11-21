@@ -13,8 +13,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
         with:
           cache_key_prefix: mise-test
       - run: mise run test
@@ -25,8 +25,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
         with:
           cache_key_prefix: mise-lint
       - run: mise run check:staticcheck
@@ -50,8 +50,8 @@ jobs:
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
         with:
           cache_key_prefix: mise-build-push
       - run: mise run build:testapp
