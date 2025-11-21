@@ -6,10 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  NAME: testapp
-  IMAGE_REPOSITORY: oci://europe-north1-docker.pkg.dev/nais-io/nais
-
 jobs:
   test:
     name: Check pull request

@@ -1,7 +1,8 @@
 ARG GO_VERSION="1.25"
+ARG MISE_VERSION="2025.11.7"
 FROM golang:${GO_VERSION}-alpine AS builder
 RUN apk add --no-cache git curl bash
-RUN curl https://mise.run | sh
+RUN curl -fsSL "https://mise.jdx.dev/install.sh" | MISE_VERSION=v${MISE_VERSION} sh
 ENV PATH="/root/.local/bin:${PATH}"
 ENV GOOS=linux
 ENV CGO_ENABLED=0
