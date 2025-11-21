@@ -206,7 +206,7 @@ func TestTimeSinceDeploy(t *testing.T) {
 	deployStartTimestamp = time.Now().Add(-1 * time.Second).UnixNano()
 
 	seconds := timeSinceDeploy()
-	
+
 	// Should be approximately 1 second
 	if seconds < 0.9 || seconds > 1.1 {
 		t.Errorf("expected timeSinceDeploy() to be around 1.0, got %f", seconds)
