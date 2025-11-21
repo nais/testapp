@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+#MISE description="Build testapp"
+
+set -e
+
+go build -o bin/testapp ./cmd/testapp
