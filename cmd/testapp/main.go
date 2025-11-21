@@ -32,22 +32,10 @@ func init() {
 	flag.Parse()
 }
 
-func main() {
-	metrics.StartTimestamp.SetToCurrentTime()
-	metrics.DeployTimestamp.Set(float64(deployStartTimestamp) / 10e8)
+func setupHandlers(mux *http.ServeMux) {
+	mux.Handle("/metrics", metrics.Handler())
 
-	metrics.LeadTime.Set(timeSinceDeploy())
-	metrics.TimeSinceDeploy.Set(timeSinceDeploy())
-	tick := time.NewTicker(time.Second)
-	go func() {
-		for range tick.C {
-			metrics.TimeSinceDeploy.Set(timeSinceDeploy())
-		}
-	}()
-
-	http.Handle("/metrics", metrics.Handler())
-
-	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		param := r.URL.Query().Get("delay")
 		if d, err := time.ParseDuration(param); err == nil {
 			time.Sleep(d)
@@ -56,32 +44,32 @@ func main() {
 		_, _ = fmt.Fprint(w, pingResponse)
 	})
 
-	http.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = fmt.Fprintf(w, "%s (rev: %s)", version.Version, version.Revision)
 	})
 
-	http.HandleFunc("/hostname", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/hostname", func(w http.ResponseWriter, _ *http.Request) {
 		hostname, _ := os.Hostname()
 		_, _ = fmt.Fprint(w, hostname)
 	})
 
-	http.HandleFunc("/env", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/env", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = fmt.Fprint(w, os.Environ())
 	})
 
-	http.HandleFunc("/loginfo", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/loginfo", func(w http.ResponseWriter, _ *http.Request) {
 		log.Info("info log entry from testapp")
 	})
 
-	http.HandleFunc("/logerror", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/logerror", func(w http.ResponseWriter, _ *http.Request) {
 		log.Error("error log entry from testapp")
 	})
 
-	http.HandleFunc("/logdebug", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/logdebug", func(w http.ResponseWriter, _ *http.Request) {
 		log.Debug("debug log entry from testapp")
 	})
 
-	http.HandleFunc("/connect", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/connect", func(w http.ResponseWriter, _ *http.Request) {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 		resp, err := http.Get(connectURL)
@@ -101,6 +89,22 @@ func main() {
 
 		_, _ = fmt.Fprintf(w, "HTTP status: %d, body:\n%s", resp.StatusCode, string(b))
 	})
+}
+
+func main() {
+	metrics.StartTimestamp.SetToCurrentTime()
+	metrics.DeployTimestamp.Set(float64(deployStartTimestamp) / 10e8)
+
+	metrics.LeadTime.Set(timeSinceDeploy())
+	metrics.TimeSinceDeploy.Set(timeSinceDeploy())
+	tick := time.NewTicker(time.Second)
+	go func() {
+		for range tick.C {
+			metrics.TimeSinceDeploy.Set(timeSinceDeploy())
+		}
+	}()
+
+	setupHandlers(http.DefaultServeMux)
 
 	log.SetLevel(log.DebugLevel)
 
