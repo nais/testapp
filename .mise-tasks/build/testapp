@@ -3,4 +3,4 @@
 
 set -e
 
-go build -o bin/testapp ./cmd/testapp
+CGO_ENABLED=0 go build -o bin/testapp ./cmd/testapp
