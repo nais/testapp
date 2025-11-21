@@ -19,7 +19,6 @@ jobs:
       - uses: jdx/mise-action@v2
         with:
           cache_key_prefix: mise-test
-      - run: mise run build:testapp
       - run: mise run test
 
   lint:
