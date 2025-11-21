@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Check pull request
+    name: Test
     runs-on: ubuntu-latest
     permissions:
       contents: read
