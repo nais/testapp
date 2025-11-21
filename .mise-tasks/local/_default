@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Start local development server"
+
+set -e
+
+go run ./cmd/testapp --bind-address=127.0.0.1:8080

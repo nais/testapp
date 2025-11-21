@@ -21,16 +21,6 @@ func gauge(name, help string) prometheus.Gauge {
 	})
 }
 
-func hist(name, help string, buckets []float64) prometheus.Histogram {
-	return prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: namespace,
-		Subsystem: subsystem,
-		Name:      name,
-		Help:      help,
-		Buckets:   buckets,
-	})
-}
-
 var (
 	LeadTime        = gauge("lead_time", "Seconds used in deployment pipeline, from making the request until the application is available")
 	TimeSinceDeploy = gauge("time_since_deploy", "Seconds since the latest deploy of this application")
