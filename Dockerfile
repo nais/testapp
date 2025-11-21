@@ -1,19 +1,20 @@
-FROM golang:1.22-alpine as builder
-RUN apk add --no-cache git make
+ARG GO_VERSION="1.25"
+FROM golang:${GO_VERSION}-alpine AS builder
+RUN apk add --no-cache git curl bash
+RUN curl https://mise.run | sh
+ENV PATH="/root/.local/bin:${PATH}"
 ENV GOOS=linux
 ENV CGO_ENABLED=0
-ENV GO111MODULE=on
-COPY . /src
 WORKDIR /src
-RUN rm -f go.sum
-RUN go get ./...
-RUN make release
-RUN go get github.com/rakyll/hey
-RUN go install github.com/rakyll/hey
+COPY go.* /src/
+RUN go mod download
+COPY mise.toml .mise-tasks /src/
+COPY . /src
+RUN mise trust
+RUN mise run build:release
 
-FROM alpine:3
-RUN apk add --no-cache ca-certificates curl vim bind-tools netcat-openbsd nmap socat bash openssl tcpdump tcptraceroute strace iperf busybox-extras
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates curl bind-tools netcat-openbsd nmap socat bash openssl tcpdump tcptraceroute strace iperf busybox-extras
 WORKDIR /app
 COPY --from=builder /src/bin/testapp /app/testapp
-COPY --from=builder /go/bin/hey /usr/bin/hey
 ENTRYPOINT ["/app/testapp"]

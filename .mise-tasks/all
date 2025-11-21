@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run all required formatters, tests and checks"
+
+set -e
+
+mise run fmt ::: test ::: check

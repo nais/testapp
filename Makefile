@@ -1,13 +1,28 @@
-DATE=$(shell date "+%Y-%m-%d")
-LAST_COMMIT=$(shell git --no-pager log -1 --pretty=%h)
-VERSION="$(DATE)-$(LAST_COMMIT)"
-LDFLAGS := -X github.com/nais/testapp/pkg/version.Revision=$(shell git rev-parse --short HEAD) -X github.com/nais/testapp/pkg/version.Version=$(VERSION)
+.PHONY: all build release local test check fmt
 
 all:
-	go build -o bin/testapp cmd/testapp/main.go
+	mise run all
+
+build:
+	mise run build
 
 release:
-	go build -a -installsuffix cgo -o bin/testapp -ldflags "-s $(LDFLAGS)" cmd/testapp/main.go
+	mise run build:release
 
 local:
-	go run cmd/testapp/main.go --bind-address=127.0.0.1:8080
+	mise run local
+
+test:
+	mise run test
+
+check:
+	mise run check
+
+staticcheck:
+	mise run check:staticcheck
+
+vulncheck:
+	mise run check:vulncheck
+
+fmt:
+	mise run fmt
