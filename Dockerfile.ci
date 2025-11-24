@@ -1,4 +1,4 @@
-FROM alpine:3.21
+FROM alpine:3.22
 RUN apk add --no-cache ca-certificates curl bind-tools netcat-openbsd nmap socat bash openssl tcpdump tcptraceroute strace iperf busybox-extras
 WORKDIR /app
 COPY ./bin/testapp /app/testapp
