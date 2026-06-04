@@ -1,4 +1,4 @@
-ARG GO_VERSION="1.25"
+ARG GO_VERSION="1.26"
 FROM golang:${GO_VERSION}-alpine AS builder
 ENV GOOS=linux
 ENV CGO_ENABLED=0
