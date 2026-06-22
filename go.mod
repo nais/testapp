@@ -10,7 +10,7 @@ tool (
 
 require (
 	github.com/prometheus/client_golang v1.23.2
-	github.com/prometheus/common v0.68.1
+	github.com/prometheus/common v0.69.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/sys v0.45.0 // indirect
