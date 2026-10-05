@@ -14,7 +14,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # ratchet:jdx/mise-action@v4
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # ratchet:jdx/mise-action@v5.0.1
         with:
           cache_key_prefix: mise-test
       - run: mise run test
@@ -25,8 +25,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # ratchet:actions/checkout@v6
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # ratchet:jdx/mise-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # ratchet:jdx/mise-action@v5.0.1
         with:
           cache_key_prefix: mise-lint
       - run: mise run check:staticcheck
@@ -51,7 +51,7 @@ jobs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # ratchet:jdx/mise-action@v4
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # ratchet:jdx/mise-action@v5.0.1
         with:
           cache_key_prefix: mise-build-push
       - run: mise run build:testapp
